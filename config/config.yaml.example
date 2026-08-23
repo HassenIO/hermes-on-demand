@@ -1,0 +1,30 @@
+# Deployed to ~/.hermes/config.yaml on the VPS by remote bootstrap.
+# Secrets stay in ~/.hermes/.env — do not put API keys here.
+#
+# Official reference:
+#   https://hermes-agent.nousresearch.com/docs/user-guide/configuration
+#   https://hermes-agent.nousresearch.com/docs/integrations/providers
+
+model:
+  provider: openrouter
+  default: xiaomi/mimo-v2.5
+
+terminal:
+  backend: docker
+  docker_image: "nikolaik/python-nodejs:python3.11-nodejs20"
+  timeout: 180
+  lifetime_seconds: 300
+  container_cpu: 1
+  container_memory: 2048
+  container_disk: 20480
+  container_persistent: true
+  docker_network: true
+  docker_persist_across_processes: true
+
+display:
+  tool_progress: off
+  busy_input_mode: interrupt
+
+# Optional Telegram tweaks (platform extras also work under gateway.platforms):
+# telegram:
+#   require_mention: true

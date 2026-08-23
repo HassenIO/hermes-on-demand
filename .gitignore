@@ -1,0 +1,6 @@
+.env
+.env.local
+remote.env
+*.pem
+*.key
+.DS_Store

@@ -1,0 +1,98 @@
+# Configuration
+
+Hermes splits settings the official way:
+
+| Kind | File on VPS | Managed from this repo |
+|------|-------------|-------------------------|
+| Secrets | `~/.hermes/.env` | `.env` on Mac → filtered push |
+| Non-secrets | `~/.hermes/config.yaml` | `config/config.yaml.example` |
+
+References:
+
+- [Configuration](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)
+- [Environment variables](https://hermes-agent.nousresearch.com/docs/reference/environment-variables)
+- [AI providers](https://hermes-agent.nousresearch.com/docs/integrations/providers)
+
+## Deploy vs runtime env
+
+### Local-only (Mac `.env`, never written into `~/.hermes/.env`)
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `TARGET_HOST` | yes | VPS hostname or IP |
+| `TARGET_USER` | yes | SSH user; owns `~/.hermes` |
+| `SSH_PORT` | no | Default `22` |
+| `SSH_IDENTITY_FILE` | no | Extra `-i` key path |
+| `REMOTE_DIR` | no | Payload dir on VPS (default `~/hermes-setup`) |
+
+### Hermes runtime (pushed to VPS `~/.hermes/.env`)
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `OPENROUTER_API_KEY` | yes | [OpenRouter](https://openrouter.ai/keys) |
+| `TELEGRAM_BOT_TOKEN` | yes | From @BotFather |
+| `TELEGRAM_ALLOWED_USERS` | yes | Numeric Telegram user ids |
+| `TELEGRAM_HOME_CHANNEL` | no | Home chat for cron; or use `/sethome` |
+| `TELEGRAM_HOME_CHANNEL_NAME` | no | Display label |
+| `TELEGRAM_GROUP_ALLOWED_USERS` | no | Group sender allowlist |
+| `TELEGRAM_GROUP_ALLOWED_CHATS` | no | Group chat id allowlist |
+| `GATEWAY_ALLOW_ALL_USERS` | no | Keep `false` / unset on VPS |
+| `FIRECRAWL_API_KEY` | no | Web scraping if enabled |
+| `VOICE_TOOLS_OPENAI_KEY` | no | Cloud STT/TTS |
+| `GROQ_API_KEY` | no | Groq Whisper STT |
+| `GITHUB_TOKEN` | no | Skills hub rate limits |
+
+Full upstream list: [Environment variables](https://hermes-agent.nousresearch.com/docs/reference/environment-variables).
+
+## Model (config.yaml)
+
+Pinned in `config/config.yaml.example`:
+
+```yaml
+model:
+  provider: openrouter
+  default: xiaomi/mimo-v2.5
+```
+
+- Provider uses `OPENROUTER_API_KEY` from `.env`
+- Model catalog page: [xiaomi/mimo-v2.5](https://openrouter.ai/xiaomi/mimo-v2.5)
+- Change model later on the VPS with `hermes model`, or edit `config.yaml` and `./scripts/deploy.sh --config-only`
+
+Do **not** put `LLM_MODEL` in `.env` — upstream removed that; `config.yaml` is source of truth.
+
+## Terminal / Docker backend
+
+```yaml
+terminal:
+  backend: docker
+  docker_image: "nikolaik/python-nodejs:python3.11-nodejs20"
+  container_cpu: 1
+  container_memory: 2048
+```
+
+- Agent shell commands run inside Docker, not as unrestricted host root
+- Host `~/.hermes/.env` secrets are **not** forwarded into the container unless listed under `docker_forward_env`
+- If the agent generates files for Telegram `MEDIA:`, mount a host-visible path (see [Telegram docs — Docker MEDIA](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/telegram))
+
+## Applying config changes
+
+```bash
+# From Mac, after editing .env or config/config.yaml.example:
+./scripts/deploy.sh --config-only
+```
+
+Or on the VPS:
+
+```bash
+hermes config set model.default xiaomi/mimo-v2.5
+hermes config set terminal.backend docker
+hermes gateway restart
+```
+
+## Inspect on VPS
+
+```bash
+hermes config
+hermes doctor
+hermes gateway status
+```
