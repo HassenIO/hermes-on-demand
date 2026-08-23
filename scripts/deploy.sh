@@ -6,18 +6,20 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=lib/common.sh
 source "$ROOT/scripts/lib/common.sh"
 
-MODE="full" # full | config-only | health
+MODE="full" # full | config-only | health | firecrawl
 for arg in "$@"; do
   case "$arg" in
     --config-only) MODE="config-only" ;;
     --health) MODE="health" ;;
+    --firecrawl) MODE="firecrawl" ;;
     -h|--help)
       cat <<'EOF'
-Usage: ./scripts/deploy.sh [--config-only|--health]
+Usage: ./scripts/deploy.sh [--config-only|--health|--firecrawl]
 
   (default)      Full remote bootstrap (packages, Docker, Hermes, gateway)
   --config-only  Push secrets + config.yaml and restart gateway
   --health       Remote healthcheck only
+  --firecrawl    Deploy/start self-hosted Firecrawl and wire Hermes to it
 EOF
       exit 0
       ;;
@@ -77,6 +79,8 @@ trap 'rm -f "$RUNTIME_ENV"' EXIT
   [[ -n "${TELEGRAM_GROUP_ALLOWED_CHATS:-}" ]] && echo "TELEGRAM_GROUP_ALLOWED_CHATS=${TELEGRAM_GROUP_ALLOWED_CHATS}"
   [[ -n "${GATEWAY_ALLOW_ALL_USERS:-}" ]] && echo "GATEWAY_ALLOW_ALL_USERS=${GATEWAY_ALLOW_ALL_USERS}"
   [[ -n "${FIRECRAWL_API_KEY:-}" ]] && echo "FIRECRAWL_API_KEY=${FIRECRAWL_API_KEY}"
+  # Self-hosted Firecrawl (default when using ./scripts/deploy.sh --firecrawl)
+  echo "FIRECRAWL_API_URL=${FIRECRAWL_API_URL:-http://127.0.0.1:3002}"
   [[ -n "${PARALLEL_API_KEY:-}" ]] && echo "PARALLEL_API_KEY=${PARALLEL_API_KEY}"
   [[ -n "${EXA_API_KEY:-}" ]] && echo "EXA_API_KEY=${EXA_API_KEY}"
   [[ -n "${VOICE_TOOLS_OPENAI_KEY:-}" ]] && echo "VOICE_TOOLS_OPENAI_KEY=${VOICE_TOOLS_OPENAI_KEY}"
@@ -95,7 +99,7 @@ if [[ "$MODE" == "health" ]]; then
 fi
 
 log "Syncing payload to VPS"
-ssh_cmd "mkdir -p '$REMOTE_DIR/scripts/lib' '$REMOTE_DIR/scripts/remote' '$REMOTE_DIR/config'"
+ssh_cmd "mkdir -p '$REMOTE_DIR/scripts/lib' '$REMOTE_DIR/scripts/remote' '$REMOTE_DIR/config' '$REMOTE_DIR/firecrawl'"
 
 # Prefer rsync if available both sides
 if command -v rsync >/dev/null 2>&1 && ssh_cmd "command -v rsync >/dev/null 2>&1"; then
@@ -107,14 +111,29 @@ if command -v rsync >/dev/null 2>&1 && ssh_cmd "command -v rsync >/dev/null 2>&1
     "$ROOT/scripts/remote/" "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/scripts/remote/"
   rsync -az -e "$RSYNC_SSH" \
     "$ROOT/config/" "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/config/"
+  rsync -az -e "$RSYNC_SSH" \
+    --exclude '.env' \
+    "$ROOT/firecrawl/" "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/firecrawl/"
 else
   scp_cmd -r "$ROOT/scripts/lib/"* "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/scripts/lib/"
   scp_cmd -r "$ROOT/scripts/remote/"* "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/scripts/remote/"
   scp_cmd -r "$ROOT/config/"* "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/config/"
+  scp_cmd "$ROOT/firecrawl/docker-compose.yml" "$ROOT/firecrawl/.env.example" \
+    "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/firecrawl/"
+  ssh_cmd "mkdir -p '$REMOTE_DIR/firecrawl/lite'"
+  scp_cmd "$ROOT/firecrawl/lite/"* \
+    "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/firecrawl/lite/"
 fi
 
 scp_cmd "$RUNTIME_ENV" "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/remote.env"
-ssh_cmd "chmod 600 '$REMOTE_DIR/remote.env' && chmod +x '$REMOTE_DIR/scripts/remote/'*.sh '$REMOTE_DIR/scripts/deploy.sh' 2>/dev/null || true"
+ssh_cmd "chmod 600 '$REMOTE_DIR/remote.env' && chmod +x '$REMOTE_DIR/scripts/remote/'*.sh 2>/dev/null || true"
+
+if [[ "$MODE" == "firecrawl" ]]; then
+  log "Deploying self-hosted Firecrawl + wiring Hermes (mode=${FIRECRAWL_MODE:-lite})"
+  ssh_cmd "FIRECRAWL_MODE='${FIRECRAWL_MODE:-lite}' bash '$REMOTE_DIR/scripts/remote/firecrawl-up.sh'"
+  log "Firecrawl deploy done. Ask the bot to scrape a URL."
+  exit 0
+fi
 
 if [[ "$MODE" == "config-only" ]]; then
   log "Config-only: write Hermes home + restart gateway"

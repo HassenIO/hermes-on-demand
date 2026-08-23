@@ -1,6 +1,7 @@
 .env
 .env.local
 remote.env
+firecrawl/.env
 *.pem
 *.key
 .DS_Store

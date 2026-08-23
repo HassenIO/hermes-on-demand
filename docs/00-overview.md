@@ -11,9 +11,10 @@ macOS (this repo)                         Ubuntu VPS
 config/config.yaml.example   --rsync-->   ~/.hermes/config.yaml
 scripts/deploy.sh            --runs-->    scripts/remote/bootstrap.sh
                                           hermes gateway (systemd user)
-                                          Docker terminal sandbox
-                                          Telegram long-poll (outbound)
-                                          OpenRouter → xiaomi/mimo-v2.5
+                                           Docker terminal sandbox
+                                           Telegram long-poll (outbound)
+                                           OpenRouter → xiaomi/mimo-v2.5
+                                           Firecrawl-compatible API (:3002 localhost)
 ```
 
 | Layer | Choice |
@@ -24,6 +25,7 @@ scripts/deploy.sh            --runs-->    scripts/remote/bootstrap.sh
 | Messaging | [Telegram gateway](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/telegram) |
 | Model | OpenRouter [`xiaomi/mimo-v2.5`](https://openrouter.ai/xiaomi/mimo-v2.5) |
 | Agent shell | Docker backend (isolated from host secrets by default) |
+| Web scrape | Local Firecrawl-compatible API ([docs/tools/firecrawl](tools/firecrawl.md)) |
 
 ## What lives where
 
@@ -52,6 +54,7 @@ scripts/deploy.sh            --runs-->    scripts/remote/bootstrap.sh
 | [04-telegram-gateway](04-telegram-gateway.md) | Bot setup and gateway service |
 | [05-operations](05-operations.md) | Update, logs, backup |
 | [06-security](06-security.md) | Hardening checklist |
+| [tools/](tools/README.md) | Optional tool integrations (Firecrawl, …) |
 | [troubleshooting](troubleshooting.md) | Common failures |
 
 ## Official upstream docs

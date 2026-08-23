@@ -7,6 +7,7 @@ Infrastructure-as-code for running [Nous Research Hermes Agent](https://hermes-a
 | **Gateway** | Telegram |
 | **Model** | OpenRouter [`xiaomi/mimo-v2.5`](https://openrouter.ai/xiaomi/mimo-v2.5) |
 | **Agent shell** | Docker backend on the VPS |
+| **Web scrape** | Local Firecrawl-compatible API on the VPS |
 | **Local Mac** | Deploy only — Hermes is **not** installed here |
 
 ## Quick start
@@ -19,6 +20,7 @@ cp .env.sample .env
 ./scripts/deploy.sh              # full remote bootstrap over SSH
 ./scripts/deploy.sh --config-only
 ./scripts/deploy.sh --health
+./scripts/deploy.sh --firecrawl  # local Firecrawl-compatible scrape API for Hermes
 ```
 
 Hermes is installed **only on the VPS**. This Mac never runs the Hermes installer.
@@ -32,14 +34,17 @@ Hermes is installed **only on the VPS**. This Mac never runs the Hermes installe
 - [Telegram gateway](docs/04-telegram-gateway.md)
 - [Operations](docs/05-operations.md)
 - [Security](docs/06-security.md)
+- [Tools](docs/tools/README.md) — [Firecrawl](docs/tools/firecrawl.md)
 - [Troubleshooting](docs/troubleshooting.md)
 
 ## Layout
 
 ```
 .env.sample                 # template → copy to .env (gitignored)
-config/config.yaml.example  # model + docker terminal
-docs/                       # full procedure
+config/config.yaml.example  # model + docker terminal + web backend
+docs/                       # install + ops procedure
+docs/tools/                 # per-tool integration docs
+firecrawl/                  # self-hosted scrape stack (lite + full)
 scripts/                    # deploy automation (Mac → VPS)
 ```
 

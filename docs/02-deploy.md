@@ -38,7 +38,10 @@ What `deploy.sh` does:
 ./scripts/deploy.sh                 # full bootstrap (idempotent)
 ./scripts/deploy.sh --config-only   # push secrets + config.yaml, restart gateway
 ./scripts/deploy.sh --health        # remote healthcheck only
+./scripts/deploy.sh --firecrawl     # self-hosted Firecrawl-compatible scrape API
 ```
+
+Web scrape tool details: [docs/tools/firecrawl.md](tools/firecrawl.md).
 
 ## What is never installed on the Mac
 

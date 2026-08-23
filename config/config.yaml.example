@@ -28,6 +28,10 @@ display:
   tool_progress: off
   busy_input_mode: interrupt
 
+# Self-hosted Firecrawl on the VPS (see firecrawl/ + ./scripts/deploy.sh --firecrawl)
+web:
+  backend: firecrawl
+
 # Optional Telegram tweaks (platform extras also work under gateway.platforms):
 # telegram:
 #   require_mention: true
