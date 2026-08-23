@@ -20,6 +20,9 @@ terminal:
   container_persistent: true
   docker_network: true
   docker_persist_across_processes: true
+  # Host-visible path for Telegram MEDIA: attachments written by the agent
+  docker_volumes:
+    - "/root/.hermes/cache/documents:/output"
 
 display:
   tool_progress: off

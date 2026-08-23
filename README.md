@@ -16,10 +16,12 @@ cp .env.sample .env
 # fill TARGET_HOST, TARGET_USER, OPENROUTER_API_KEY,
 #      TELEGRAM_BOT_TOKEN, TELEGRAM_ALLOWED_USERS
 
-./scripts/deploy.sh    # added next — remote bootstrap over SSH
+./scripts/deploy.sh              # full remote bootstrap over SSH
+./scripts/deploy.sh --config-only
+./scripts/deploy.sh --health
 ```
 
-Until deploy scripts land, use the docs checklist and manual VPS steps in [docs/02-deploy.md](docs/02-deploy.md).
+Hermes is installed **only on the VPS**. This Mac never runs the Hermes installer.
 
 ## Documentation
 
