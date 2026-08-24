@@ -53,6 +53,15 @@ if [[ -x "$VENV/bin/python" && -x "$VENV/bin/mnemosyne-hermes" ]]; then
   "$VENV/bin/mnemosyne-hermes" status || true
 fi
 
+# Refresh Agent-Reach image + skill if previously installed
+if docker image inspect "${AGENT_REACH_IMAGE:-hermes-terminal:agent-reach}" >/dev/null 2>&1 \
+  || [[ -f "$HERMES_HOME/skills/agent-reach/SKILL.md" ]]; then
+  if [[ -f "$SCRIPT_DIR/agent-reach-up.sh" ]]; then
+    log "Refreshing Agent-Reach (image + skill)"
+    bash "$SCRIPT_DIR/agent-reach-up.sh" || warn "Agent-Reach refresh failed"
+  fi
+fi
+
 log "Restarting gateway"
 hermes gateway restart 2>/dev/null || hermes gateway start 2>/dev/null || true
 sleep 3

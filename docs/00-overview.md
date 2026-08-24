@@ -14,7 +14,8 @@ scripts/deploy.sh            --runs-->    scripts/remote/bootstrap.sh
                                            Docker terminal sandbox
                                            Telegram long-poll (outbound)
                                            OpenRouter → xiaomi/mimo-v2.5
-                                           Firecrawl-compatible API (:3002 localhost)
+                                            Firecrawl-compatible API (:3002 localhost)
+                                            Agent-Reach terminal image (yt-dlp, gh, …)
 ```
 
 | Layer | Choice |

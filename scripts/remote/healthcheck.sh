@@ -105,6 +105,33 @@ else
   warn "Mnemosyne side-venv missing (run ./scripts/deploy.sh --mnemosyne)"
 fi
 
+# Agent-Reach custom terminal image + skill
+AR_IMAGE="${AGENT_REACH_IMAGE:-hermes-terminal:agent-reach}"
+if docker image inspect "$AR_IMAGE" >/dev/null 2>&1; then
+  log "OK  Agent-Reach image $AR_IMAGE"
+  if docker run --rm "$AR_IMAGE" yt-dlp --version >/dev/null 2>&1; then
+    log "OK  Agent-Reach image yt-dlp"
+  else
+    warn "Agent-Reach image missing yt-dlp"
+    failed=1
+  fi
+else
+  warn "Agent-Reach image missing (run ./scripts/deploy.sh --agent-reach)"
+fi
+if [[ -f "$HERMES_HOME/skills/agent-reach/SKILL.md" ]]; then
+  log "OK  Agent-Reach skill installed"
+else
+  warn "Agent-Reach skill missing (~/.hermes/skills/agent-reach/SKILL.md)"
+fi
+if command -v hermes >/dev/null 2>&1; then
+  img="$(hermes config get terminal.docker_image 2>/dev/null || true)"
+  if echo "$img" | grep -q 'agent-reach'; then
+    log "OK  terminal.docker_image → agent-reach"
+  elif [[ -n "$img" ]]; then
+    warn "terminal.docker_image is not agent-reach (got: $img)"
+  fi
+fi
+
 if [[ "$failed" -ne 0 ]]; then
   die "healthcheck failed"
 fi

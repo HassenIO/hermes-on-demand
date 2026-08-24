@@ -11,20 +11,25 @@ model:
 
 terminal:
   backend: docker
-  docker_image: "nikolaik/python-nodejs:python3.11-nodejs20"
+  # Custom image with Agent-Reach zero-config CLIs (./scripts/deploy.sh --agent-reach).
+  # Falls back to nikolaik base if Agent-Reach not installed yet.
+  docker_image: "hermes-terminal:agent-reach"
   timeout: 180
   lifetime_seconds: 300
   container_cpu: 1
   # Keep low on small VPS (~1.5–2 GB host RAM). Raise on larger hosts.
-  container_memory: 512
+  container_memory: 768
   container_disk: 10240
   container_persistent: true
   docker_network: true
   docker_persist_across_processes: true
   docker_shm_size: 64m
+  docker_forward_env:
+    - GITHUB_TOKEN
   docker_volumes:
     - "/root/.hermes/cache/documents:/output"
     - "/root/.hermes/memories:/root/.hermes/memories:ro"
+    - "/root/.agent-reach:/root/.agent-reach"
 
 display:
   tool_progress: off

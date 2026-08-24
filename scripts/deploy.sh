@@ -6,7 +6,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=lib/common.sh
 source "$ROOT/scripts/lib/common.sh"
 
-MODE="full" # full | config-only | health | firecrawl | artifacts | update | mnemosyne
+MODE="full" # full | config-only | health | firecrawl | artifacts | update | mnemosyne | agent-reach
 for arg in "$@"; do
   case "$arg" in
     --config-only) MODE="config-only" ;;
@@ -15,17 +15,19 @@ for arg in "$@"; do
     --artifacts) MODE="artifacts" ;;
     --update) MODE="update" ;;
     --mnemosyne) MODE="mnemosyne" ;;
+    --agent-reach) MODE="agent-reach" ;;
     -h|--help)
       cat <<'EOF'
-Usage: ./scripts/deploy.sh [--config-only|--health|--firecrawl|--artifacts|--update|--mnemosyne]
+Usage: ./scripts/deploy.sh [--config-only|--health|--firecrawl|--artifacts|--update|--mnemosyne|--agent-reach]
 
-  (default)      Full remote bootstrap (Hermes + gateway + Firecrawl lite + Mnemosyne + artifacts)
+  (default)      Full remote bootstrap (Hermes + Firecrawl + Mnemosyne + Agent-Reach + artifacts)
   --config-only  Push secrets + config.yaml + artifacts, re-apply Docker patch, restart
   --artifacts    Push artifacts/USER.md + SOUL.md + MEMORY.md only
   --health       Remote healthcheck (re-applies Docker patch if missing)
   --firecrawl    Deploy/start self-hosted Firecrawl only
   --mnemosyne    Install/refresh Mnemosyne side-venv + Hermes wrapper plugin
-  --update       hermes update + Docker patch + Mnemosyne side-venv upgrade + restart
+  --agent-reach  Build terminal image + install Agent-Reach skill (zero-config web CLIs)
+  --update       hermes update + Docker patch + Mnemosyne + Agent-Reach refresh + restart
 EOF
       exit 0
       ;;
@@ -105,7 +107,7 @@ if [[ "$MODE" == "health" ]]; then
 fi
 
 log "Syncing payload to VPS"
-ssh_cmd "mkdir -p '$REMOTE_DIR/scripts/lib' '$REMOTE_DIR/scripts/remote' '$REMOTE_DIR/config' '$REMOTE_DIR/firecrawl' '$REMOTE_DIR/artifacts'"
+ssh_cmd "mkdir -p '$REMOTE_DIR/scripts/lib' '$REMOTE_DIR/scripts/remote' '$REMOTE_DIR/config' '$REMOTE_DIR/firecrawl' '$REMOTE_DIR/artifacts' '$REMOTE_DIR/extensions'"
 
 # Prefer rsync if available both sides
 if command -v rsync >/dev/null 2>&1 && ssh_cmd "command -v rsync >/dev/null 2>&1"; then
@@ -124,6 +126,10 @@ if command -v rsync >/dev/null 2>&1 && ssh_cmd "command -v rsync >/dev/null 2>&1
     rsync -az -e "$RSYNC_SSH" \
       "$ROOT/artifacts/" "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/artifacts/"
   fi
+  if [[ -d "$ROOT/extensions" ]]; then
+    rsync -az -e "$RSYNC_SSH" \
+      "$ROOT/extensions/" "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/extensions/"
+  fi
 else
   scp_cmd -r "$ROOT/scripts/lib/"* "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/scripts/lib/"
   scp_cmd -r "$ROOT/scripts/remote/"* "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/scripts/remote/"
@@ -136,6 +142,11 @@ else
   if [[ -d "$ROOT/artifacts" ]]; then
     scp_cmd "$ROOT/artifacts/"* \
       "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/artifacts/" 2>/dev/null || true
+  fi
+  if [[ -d "$ROOT/extensions" ]]; then
+    ssh_cmd "mkdir -p '$REMOTE_DIR/extensions'"
+    scp_cmd -r "$ROOT/extensions/"* \
+      "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/extensions/" 2>/dev/null || true
   fi
 fi
 
@@ -153,6 +164,13 @@ if [[ "$MODE" == "mnemosyne" ]]; then
   log "Installing/refreshing Mnemosyne (side-venv + wrapper)"
   ssh_cmd "MNEMOSYNE_PROFILE='${MNEMOSYNE_PROFILE:-embeddings}' bash '$REMOTE_DIR/scripts/remote/mnemosyne-up.sh'"
   log "Mnemosyne done. /new in Telegram, then hermes memory status."
+  exit 0
+fi
+
+if [[ "$MODE" == "agent-reach" ]]; then
+  log "Installing Agent-Reach (custom terminal image + Hermes skill)"
+  ssh_cmd "AGENT_REACH_REF='${AGENT_REACH_REF:-main}' bash '$REMOTE_DIR/scripts/remote/agent-reach-up.sh'"
+  log "Agent-Reach done. /new in Telegram, then try a YouTube or GitHub URL."
   exit 0
 fi
 
@@ -215,6 +233,15 @@ if [[ "${SKIP_MNEMOSYNE:-}" != "1" ]]; then
     || warn "Mnemosyne setup failed — re-run ./scripts/deploy.sh --mnemosyne"
 else
   log "Skipping Mnemosyne (SKIP_MNEMOSYNE=1)"
+fi
+
+# Default stack includes Agent-Reach (custom Docker terminal image + skill). Opt out: SKIP_AGENT_REACH=1
+if [[ "${SKIP_AGENT_REACH:-}" != "1" ]]; then
+  log "Installing Agent-Reach (SKIP_AGENT_REACH=1 to skip)"
+  ssh_cmd "AGENT_REACH_REF='${AGENT_REACH_REF:-main}' bash '$REMOTE_DIR/scripts/remote/agent-reach-up.sh'" \
+    || warn "Agent-Reach setup failed — re-run ./scripts/deploy.sh --agent-reach"
+else
+  log "Skipping Agent-Reach (SKIP_AGENT_REACH=1)"
 fi
 
 ssh_cmd "bash '$REMOTE_DIR/scripts/remote/healthcheck.sh'"

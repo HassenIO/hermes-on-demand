@@ -9,11 +9,14 @@ Each tool gets its own page under `docs/tools/`. Code and compose files live nex
 | Firecrawl (web scrape / search) | [firecrawl.md](firecrawl.md) | `./scripts/deploy.sh --firecrawl` |
 | Memory / USER profile (built-in) | [memory-profile.md](memory-profile.md) | `./scripts/deploy.sh --artifacts` |
 | Mnemosyne (external memory) | [mnemosyne.md](mnemosyne.md) | `./scripts/deploy.sh --mnemosyne` |
+| Agent-Reach (platform web CLIs) | [agent-reach.md](agent-reach.md) | `./scripts/deploy.sh --agent-reach` |
+
+Extension registry: [extensions/registry.yaml](../../extensions/registry.yaml).
 
 ## Adding a future tool
 
-1. Put runtime assets under a top-level folder (e.g. `mytool/`).
-2. Add a remote script if needed: `scripts/remote/mytool-up.sh`.
-3. Wire a flag in `scripts/deploy.sh` (e.g. `--mytool`).
-4. Document it here as `docs/tools/mytool.md` and link it in this table.
-5. Extend `.env.sample` / `config/config.yaml.example` with the required keys.
+1. Prefer `extensions/<name>/` + `scripts/remote/<name>-up.sh` (see [extensions/README.md](../../extensions/README.md)).
+2. Wire a flag in `scripts/deploy.sh` and optional `SKIP_*` on full deploy.
+3. Hook `healthcheck.sh` / `hermes-update.sh` if needed.
+4. Document here as `docs/tools/<name>.md` and register in `extensions/registry.yaml`.
+5. Extend `.env.sample` / `config/config.yaml.example` with required keys.

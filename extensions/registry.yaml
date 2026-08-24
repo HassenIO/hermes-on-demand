@@ -1,0 +1,27 @@
+# Extension registry — Mac control plane source of truth.
+# Remote installers live under extensions/<name>/ and scripts/remote/.
+#
+# Types: service | hermes-plugin | skill+cli | config-only
+
+extensions:
+  firecrawl:
+    type: service
+    default: true
+    skip_env: SKIP_FIRECRAWL
+    flag: --firecrawl
+    remote: scripts/remote/firecrawl-up.sh
+
+  mnemosyne:
+    type: hermes-plugin
+    default: true
+    skip_env: SKIP_MNEMOSYNE
+    flag: --mnemosyne
+    remote: scripts/remote/mnemosyne-up.sh
+
+  agent-reach:
+    type: skill+cli
+    default: true
+    skip_env: SKIP_AGENT_REACH
+    flag: --agent-reach
+    remote: scripts/remote/agent-reach-up.sh
+    notes: "Zero-config channels in custom Docker terminal image + Hermes skill"
