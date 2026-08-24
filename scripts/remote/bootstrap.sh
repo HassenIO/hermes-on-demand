@@ -39,11 +39,15 @@ docker info >/dev/null
 
 log "Ensuring Hermes Agent"
 export PATH="${HOME}/.local/bin:/usr/local/bin:${PATH}"
-if ! command -v hermes >/dev/null 2>&1; then
-  # Official installer can hang a long time on Playwright browser download.
-  # Run it with a long timeout; if the CLI lands in the venv, finish the link ourselves.
+if ! command -v hermes >/dev/null 2>&1 \
+  && [[ ! -x /usr/local/lib/hermes-agent/venv/bin/hermes ]] \
+  && [[ ! -x "${HOME}/.hermes/hermes-agent/venv/bin/hermes" ]]; then
+  # VPS gateway uses Docker sandbox / no local Chromium. Skip Playwright browser
+  # install so the official installer does not hang on large downloads.
+  # Docs: https://hermes-agent.nousresearch.com/docs/getting-started/installation
+  log "Running official installer (--skip-browser)"
   set +e
-  curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+  curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --skip-browser
   install_rc=$?
   set -e
   if [[ "$install_rc" -ne 0 ]]; then
@@ -51,21 +55,29 @@ if ! command -v hermes >/dev/null 2>&1; then
   fi
 fi
 
-# Root FHS layout: ensure /usr/local/bin/hermes points at the venv entrypoint
-if [[ ! -x /usr/local/bin/hermes ]]; then
+# Always repair CLI links to the real venv entrypoint (never a self-loop)
+_link_hermes_cli() {
+  local venv_hermes=""
   if [[ -x /usr/local/lib/hermes-agent/venv/bin/hermes ]]; then
-    ln -sfn /usr/local/lib/hermes-agent/venv/bin/hermes /usr/local/bin/hermes
-    log "Linked /usr/local/bin/hermes → venv"
-  elif [[ -x "${HOME}/.local/bin/hermes" ]]; then
-    export PATH="${HOME}/.local/bin:${PATH}"
+    venv_hermes=/usr/local/lib/hermes-agent/venv/bin/hermes
+  elif [[ -x "${HOME}/.hermes/hermes-agent/venv/bin/hermes" ]]; then
+    venv_hermes="${HOME}/.hermes/hermes-agent/venv/bin/hermes"
   fi
-fi
-# Non-root convenience symlink doctor expects
-if [[ -x /usr/local/bin/hermes || -x /usr/local/lib/hermes-agent/venv/bin/hermes ]]; then
+  [[ -n "$venv_hermes" ]] || return 1
+  ln -sfn "$venv_hermes" /usr/local/bin/hermes 2>/dev/null || true
   mkdir -p "${HOME}/.local/bin"
-  ln -sfn "$(command -v hermes 2>/dev/null || echo /usr/local/lib/hermes-agent/venv/bin/hermes)" \
-    "${HOME}/.local/bin/hermes" 2>/dev/null || true
-fi
+  # Break self-referential loops from prior broken doctor --fix runs
+  if [[ -L "${HOME}/.local/bin/hermes" ]]; then
+    local t
+    t="$(readlink "${HOME}/.local/bin/hermes" 2>/dev/null || true)"
+    if [[ "$t" == "${HOME}/.local/bin/hermes" || "$t" == "hermes" || "$t" == "./hermes" ]]; then
+      rm -f "${HOME}/.local/bin/hermes"
+    fi
+  fi
+  ln -sfn "$venv_hermes" "${HOME}/.local/bin/hermes"
+  return 0
+}
+_link_hermes_cli || true
 hash -r 2>/dev/null || true
 command -v hermes >/dev/null 2>&1 || die "hermes not on PATH after install"
 log "hermes: $(command -v hermes) ($(hermes --version 2>/dev/null | head -1 || true))"
