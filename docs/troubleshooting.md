@@ -70,6 +70,20 @@ groups   # should include docker (re-login after group add)
 hermes config get terminal.backend   # docker
 ```
 
+### `too many colons` / exit 125 on `docker run`
+
+Telegram session IDs contain `:`. Without our patch, Hermes uses them as host paths in `-v` and Docker fails.
+
+```bash
+# From Mac:
+./scripts/deploy.sh --health          # re-applies patch if missing
+# Or on VPS:
+bash ~/hermes-setup/scripts/remote/patch-hermes-docker.sh
+hermes gateway restart
+```
+
+After `hermes update`, always use `./scripts/deploy.sh --update` (not bare update).
+
 If the user was just added to `docker`, start a new SSH session or:
 
 ```bash

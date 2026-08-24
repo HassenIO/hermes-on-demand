@@ -27,21 +27,25 @@ tail -f ~/.hermes/logs/errors.log
 
 ## Update Hermes
 
-On the VPS (SSH):
+**Do not run bare `hermes update` alone** — it can overwrite our Docker path sanitize and break Telegram sandboxes.
+
+From Mac (preferred):
 
 ```bash
-hermes update
-hermes gateway restart
-hermes doctor
+./scripts/deploy.sh --update
 ```
 
-Or re-run full deploy from Mac after upstream changes if you only manage config from this repo:
+On the VPS:
+
+```bash
+bash ~/hermes-setup/scripts/remote/hermes-update.sh
+```
+
+That runs `hermes update`, re-applies the Docker colon-path patch, repairs CLI links, refreshes artifacts, and restarts the gateway. Healthcheck also self-heals the patch if missing:
 
 ```bash
 ./scripts/deploy.sh --health
 ```
-
-`hermes update` on a user-service + linger setup can restart the gateway without root. System units may need passwordless sudo for systemctl — see [Messaging gateway — service management](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/).
 
 ## Change model or secrets
 

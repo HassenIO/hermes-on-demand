@@ -49,7 +49,7 @@ scripts/deploy.sh            --runs-->    scripts/remote/bootstrap.sh
 | Doc | Topic |
 |-----|--------|
 | [01-prerequisites](01-prerequisites.md) | VPS, SSH, BotFather, OpenRouter |
-| [02-deploy](02-deploy.md) | End-to-end deploy from Mac |
+| [02-deploy](02-deploy.md) | Golden path, Firecrawl, Docker patch, upgrades |
 | [03-configuration](03-configuration.md) | Env vars and config.yaml |
 | [04-telegram-gateway](04-telegram-gateway.md) | Bot setup and gateway service |
 | [05-operations](05-operations.md) | Update, logs, backup |
