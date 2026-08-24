@@ -98,6 +98,9 @@ trap 'rm -f "$RUNTIME_ENV"' EXIT
   [[ -n "${GITHUB_TOKEN:-}" ]] && echo "GITHUB_TOKEN=${GITHUB_TOKEN}"
   # Prefer plain api.telegram.org (avoids slow DoH fallback-IP path on some VPS networks)
   echo "HERMES_TELEGRAM_DISABLE_FALLBACK_IPS=${HERMES_TELEGRAM_DISABLE_FALLBACK_IPS:-true}"
+  # VPS system timezone (IANA). Applied on every deploy via set-timezone.sh
+  echo "TIMEZONE=${TIMEZONE:-Asia/Dubai}"
+  echo "TZ=${TIMEZONE:-Asia/Dubai}"
 } >"$RUNTIME_ENV"
 chmod 600 "$RUNTIME_ENV"
 
@@ -153,6 +156,11 @@ fi
 
 scp_cmd "$RUNTIME_ENV" "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/remote.env"
 ssh_cmd "chmod 600 '$REMOTE_DIR/remote.env' && chmod +x '$REMOTE_DIR/scripts/remote/'*.sh 2>/dev/null || true"
+
+# Apply VPS timezone on every deploy mode (except health-only above)
+log "Applying VPS timezone (TIMEZONE=${TIMEZONE:-Asia/Dubai})"
+ssh_cmd "TIMEZONE='${TIMEZONE:-Asia/Dubai}' bash '$REMOTE_DIR/scripts/remote/set-timezone.sh'" \
+  || warn "timezone apply failed — check TIMEZONE= in .env"
 
 if [[ "$MODE" == "firecrawl" ]]; then
   log "Deploying self-hosted Firecrawl + wiring Hermes (mode=${FIRECRAWL_MODE:-lite})"

@@ -22,7 +22,7 @@ if command -v apt-get >/dev/null 2>&1; then
   sudo apt-get update -y
   sudo apt-get install -y \
     ca-certificates curl git xz-utils ffmpeg gnupg lsb-release \
-    apt-transport-https software-properties-common
+    apt-transport-https software-properties-common tzdata
 else
   die "expected apt-get (Ubuntu/Debian)"
 fi
@@ -90,6 +90,11 @@ mkdir -p "$HERMES_HOME"
 
 log "Writing $HERMES_HOME/.env"
 install -m 600 "$REMOTE_ENV" "$HERMES_HOME/.env"
+
+# System timezone from TIMEZONE in remote.env / Hermes .env
+if [[ -f "$SCRIPT_DIR/set-timezone.sh" ]]; then
+  bash "$SCRIPT_DIR/set-timezone.sh" || warn "timezone setup skipped"
+fi
 
 log "Writing $HERMES_HOME/config.yaml"
 install -m 644 "$CONFIG_SRC" "$HERMES_HOME/config.yaml"

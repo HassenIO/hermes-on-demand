@@ -36,6 +36,22 @@ check "Hermes .env" test -f "$HERMES_HOME/.env"
 check "Hermes config.yaml" test -f "$HERMES_HOME/config.yaml"
 check "USER.md seed" test -s "$HERMES_HOME/memories/USER.md"
 
+# Timezone (optional but recommended via TIMEZONE= in Mac .env)
+want_tz=""
+if [[ -f "$HERMES_HOME/.env" ]]; then
+  want_tz="$(grep -E '^TIMEZONE=' "$HERMES_HOME/.env" 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '"' || true)"
+fi
+cur_tz="$(timedatectl show -p Timezone --value 2>/dev/null || cat /etc/timezone 2>/dev/null || true)"
+if [[ -n "$want_tz" ]]; then
+  if [[ "$cur_tz" == "$want_tz" ]]; then
+    log "OK  timezone $cur_tz"
+  else
+    warn "timezone is '$cur_tz' (want TIMEZONE=$want_tz) — re-run deploy"
+  fi
+elif [[ -n "$cur_tz" ]]; then
+  log "OK  timezone $cur_tz (TIMEZONE not pinned in .env)"
+fi
+
 # Self-heal Docker colon-in-path patch after hermes update overwrites docker.py
 docker_py=""
 for f in \

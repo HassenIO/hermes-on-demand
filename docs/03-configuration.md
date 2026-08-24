@@ -24,6 +24,7 @@ References:
 | `SSH_PORT` | no | Default `22` |
 | `SSH_IDENTITY_FILE` | no | Extra `-i` key path |
 | `REMOTE_DIR` | no | Payload dir on VPS (default `~/hermes-setup`) |
+| `TIMEZONE` | no | IANA TZ for VPS (`timedatectl`); default `Asia/Dubai`. Applied on every deploy; also written to VPS `~/.hermes/.env` as `TIMEZONE` + `TZ` |
 
 ### Hermes runtime (pushed to VPS `~/.hermes/.env`)
 
