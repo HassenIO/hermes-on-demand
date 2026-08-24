@@ -6,22 +6,24 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=lib/common.sh
 source "$ROOT/scripts/lib/common.sh"
 
-MODE="full" # full | config-only | health | firecrawl | artifacts
+MODE="full" # full | config-only | health | firecrawl | artifacts | update
 for arg in "$@"; do
   case "$arg" in
     --config-only) MODE="config-only" ;;
     --health) MODE="health" ;;
     --firecrawl) MODE="firecrawl" ;;
     --artifacts) MODE="artifacts" ;;
+    --update) MODE="update" ;;
     -h|--help)
       cat <<'EOF'
-Usage: ./scripts/deploy.sh [--config-only|--health|--firecrawl|--artifacts]
+Usage: ./scripts/deploy.sh [--config-only|--health|--firecrawl|--artifacts|--update]
 
-  (default)      Full remote bootstrap (packages, Docker, Hermes, gateway)
-  --config-only  Push secrets + config.yaml + artifacts, restart gateway
-  --artifacts    Push artifacts/USER.md + SOUL.md only (no full config overwrite)
-  --health       Remote healthcheck only
-  --firecrawl    Deploy/start self-hosted Firecrawl and wire Hermes to it
+  (default)      Full remote bootstrap (Hermes + gateway + Firecrawl lite + artifacts)
+  --config-only  Push secrets + config.yaml + artifacts, re-apply Docker patch, restart
+  --artifacts    Push artifacts/USER.md + SOUL.md + MEMORY.md only
+  --health       Remote healthcheck (re-applies Docker patch if missing)
+  --firecrawl    Deploy/start self-hosted Firecrawl only
+  --update       Remote hermes update + re-apply Docker patch + restart gateway
 EOF
       exit 0
       ;;
@@ -150,6 +152,14 @@ if [[ "$MODE" == "artifacts" ]]; then
   ssh_cmd "bash '$REMOTE_DIR/scripts/remote/install-artifacts.sh'"
   ssh_cmd "export PATH=\"\$HOME/.local/bin:/usr/local/bin:\$PATH\"; hermes gateway restart 2>/dev/null || hermes gateway start 2>/dev/null || true"
   log "Artifacts applied. Start a new Telegram chat (/new) so the profile reloads."
+  exit 0
+fi
+
+if [[ "$MODE" == "update" ]]; then
+  log "Remote Hermes update + repair (Docker patch, links, gateway)"
+  ssh_cmd "bash '$REMOTE_DIR/scripts/remote/hermes-update.sh'"
+  ssh_cmd "bash '$REMOTE_DIR/scripts/remote/healthcheck.sh'"
+  log "Update complete."
   exit 0
 fi
 

@@ -4,6 +4,8 @@
 # Bug: task_id like "session:agent:main:telegram:dm:123" is used as a host
 # directory name in -v mounts. Docker treats ":" as volume syntax → exit 125
 # "too many colons". Labels were already sanitized; filesystem paths were not.
+#
+# Idempotent. Safe to run after every hermes update / deploy / healthcheck.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,9 +17,34 @@ CANDIDATES=(
   "${HOME}/.hermes/hermes-agent/tools/environments/docker.py"
 )
 
-patched=0
+OLD='sandbox = get_sandbox_dir() / "docker" / task_id'
+NEW='sandbox = get_sandbox_dir() / "docker" / _sanitize_label_value(task_id)'
+
+is_patched() {
+  local f="$1"
+  [[ -f "$f" ]] && grep -Fq '_sanitize_label_value(task_id)' "$f" \
+    && grep -Fq 'get_sandbox_dir() / "docker"' "$f"
+}
+
+needs_patch() {
+  local f="$1"
+  [[ -f "$f" ]] && grep -Fq "$OLD" "$f"
+}
+
+patched_any=0
+found_any=0
 for f in "${CANDIDATES[@]}"; do
   [[ -f "$f" ]] || continue
+  found_any=1
+  if is_patched "$f"; then
+    log "Docker path sanitize already present: $f"
+    patched_any=1
+    continue
+  fi
+  if ! needs_patch "$f"; then
+    warn "docker.py pattern not found (upstream may have changed): $f"
+    continue
+  fi
   python3 - "$f" <<'PY'
 import sys
 from pathlib import Path
@@ -30,15 +57,21 @@ if new in t:
     raise SystemExit(0)
 if old not in t:
     print(f"skip (pattern missing): {p}")
-    raise SystemExit(0)
+    raise SystemExit(1)
 p.write_text(t.replace(old, new, 1))
 print(f"patched: {p}")
 PY
-  patched=1
+  patched_any=1
 done
 
-if [[ "$patched" -eq 0 ]]; then
+if [[ "$found_any" -eq 0 ]]; then
   warn "docker.py not found — skip path sanitize patch"
-else
-  log "Hermes Docker sandbox path sanitize applied"
+  exit 0
 fi
+
+if [[ "$patched_any" -eq 1 ]]; then
+  log "Hermes Docker sandbox path sanitize OK"
+  exit 0
+fi
+
+die "Could not apply Docker path sanitize (upstream docker.py shape changed?)"

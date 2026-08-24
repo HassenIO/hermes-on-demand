@@ -36,6 +36,31 @@ check "Hermes .env" test -f "$HERMES_HOME/.env"
 check "Hermes config.yaml" test -f "$HERMES_HOME/config.yaml"
 check "USER.md seed" test -s "$HERMES_HOME/memories/USER.md"
 
+# Self-heal Docker colon-in-path patch after hermes update overwrites docker.py
+docker_py=""
+for f in \
+  /usr/local/lib/hermes-agent/tools/environments/docker.py \
+  "${HOME}/.hermes/hermes-agent/tools/environments/docker.py"
+do
+  [[ -f "$f" ]] && docker_py="$f" && break
+done
+if [[ -n "$docker_py" ]]; then
+  if grep -Fq '_sanitize_label_value(task_id)' "$docker_py" \
+    && grep -Fq 'get_sandbox_dir() / "docker"' "$docker_py"; then
+    log "OK  Docker path sanitize patch"
+  else
+    warn "Docker path sanitize missing — re-applying"
+    if bash "$SCRIPT_DIR/patch-hermes-docker.sh"; then
+      log "OK  Docker path sanitize patch (re-applied)"
+    else
+      warn "FAIL Docker path sanitize patch"
+      failed=1
+    fi
+  fi
+else
+  warn "docker.py not found (skip patch check)"
+fi
+
 if command -v hermes >/dev/null 2>&1; then
   if hermes doctor >/dev/null 2>&1; then
     log "OK  hermes doctor"
