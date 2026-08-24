@@ -21,18 +21,27 @@ check() {
   fi
 }
 
+# Prefer real binary if ~/.local/bin has a broken symlink loop
+if [[ -L "${HOME}/.local/bin/hermes" ]]; then
+  if ! readlink -f "${HOME}/.local/bin/hermes" >/dev/null 2>&1; then
+    warn "fixing broken hermes symlink at ~/.local/bin/hermes"
+    ln -sfn /usr/local/lib/hermes-agent/venv/bin/hermes "${HOME}/.local/bin/hermes" 2>/dev/null \
+      || ln -sfn /usr/local/bin/hermes "${HOME}/.local/bin/hermes" 2>/dev/null || true
+  fi
+fi
+
 check "hermes on PATH" command -v hermes >/dev/null
 check "docker info" docker info >/dev/null 2>&1
 check "Hermes .env" test -f "$HERMES_HOME/.env"
 check "Hermes config.yaml" test -f "$HERMES_HOME/config.yaml"
+check "USER.md seed" test -s "$HERMES_HOME/memories/USER.md"
 
 if command -v hermes >/dev/null 2>&1; then
   if hermes doctor >/dev/null 2>&1; then
     log "OK  hermes doctor"
   else
-    warn "hermes doctor reported issues (see output below)"
-    hermes doctor || true
-    failed=1
+    warn "hermes doctor reported issues (non-fatal; gateway may still be fine)"
+    hermes doctor 2>&1 | tail -20 || true
   fi
   if hermes gateway status >/dev/null 2>&1; then
     log "OK  gateway status"

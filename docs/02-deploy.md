@@ -36,10 +36,27 @@ What `deploy.sh` does:
 
 ```bash
 ./scripts/deploy.sh                 # full bootstrap (idempotent)
-./scripts/deploy.sh --config-only   # push secrets + config.yaml, restart gateway
+./scripts/deploy.sh --config-only   # push secrets + config.yaml + artifacts, restart gateway
+./scripts/deploy.sh --artifacts     # push artifacts/USER.md + SOUL.md only
 ./scripts/deploy.sh --health        # remote healthcheck only
 ./scripts/deploy.sh --firecrawl     # self-hosted Firecrawl-compatible scrape API
 ```
+
+### Persona + memory seeds (`artifacts/`)
+
+| Local file | VPS path | Notes |
+|------------|----------|--------|
+| `artifacts/SOUL.md` | `~/.hermes/SOUL.md` | Agent identity |
+| `artifacts/USER.md` | `~/.hermes/memories/USER.md` | User profile (`§`-delimited entries) |
+| `artifacts/MEMORY.md` | `~/.hermes/memories/MEMORY.md` | Agent notes (`§`-delimited entries) |
+
+Uploaded on full bootstrap, `--config-only`, and `--artifacts`. Format details: [tools/memory-profile.md](tools/memory-profile.md).
+
+```bash
+./scripts/deploy.sh --artifacts
+```
+
+Then in Telegram send **`/new`** so the frozen memory snapshot reloads.
 
 Web scrape tool details: [docs/tools/firecrawl.md](tools/firecrawl.md).
 

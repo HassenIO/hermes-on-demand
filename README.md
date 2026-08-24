@@ -19,6 +19,7 @@ cp .env.sample .env
 
 ./scripts/deploy.sh              # full remote bootstrap over SSH
 ./scripts/deploy.sh --config-only
+./scripts/deploy.sh --artifacts  # push artifacts/USER.md + SOUL.md
 ./scripts/deploy.sh --health
 ./scripts/deploy.sh --firecrawl  # local Firecrawl-compatible scrape API for Hermes
 ```
@@ -41,6 +42,9 @@ Hermes is installed **only on the VPS**. This Mac never runs the Hermes installe
 
 ```
 .env.sample                 # template → copy to .env (gitignored)
+artifacts/SOUL.md           # → VPS ~/.hermes/SOUL.md
+artifacts/USER.md           # → VPS ~/.hermes/memories/USER.md  (§ entries)
+artifacts/MEMORY.md         # → VPS ~/.hermes/memories/MEMORY.md (§ entries)
 config/config.yaml.example  # model + docker terminal + web backend
 docs/                       # install + ops procedure
 docs/tools/                 # per-tool integration docs

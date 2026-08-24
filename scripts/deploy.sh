@@ -6,18 +6,20 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=lib/common.sh
 source "$ROOT/scripts/lib/common.sh"
 
-MODE="full" # full | config-only | health | firecrawl
+MODE="full" # full | config-only | health | firecrawl | artifacts
 for arg in "$@"; do
   case "$arg" in
     --config-only) MODE="config-only" ;;
     --health) MODE="health" ;;
     --firecrawl) MODE="firecrawl" ;;
+    --artifacts) MODE="artifacts" ;;
     -h|--help)
       cat <<'EOF'
-Usage: ./scripts/deploy.sh [--config-only|--health|--firecrawl]
+Usage: ./scripts/deploy.sh [--config-only|--health|--firecrawl|--artifacts]
 
   (default)      Full remote bootstrap (packages, Docker, Hermes, gateway)
-  --config-only  Push secrets + config.yaml and restart gateway
+  --config-only  Push secrets + config.yaml + artifacts, restart gateway
+  --artifacts    Push artifacts/USER.md + SOUL.md only (no full config overwrite)
   --health       Remote healthcheck only
   --firecrawl    Deploy/start self-hosted Firecrawl and wire Hermes to it
 EOF
@@ -99,7 +101,7 @@ if [[ "$MODE" == "health" ]]; then
 fi
 
 log "Syncing payload to VPS"
-ssh_cmd "mkdir -p '$REMOTE_DIR/scripts/lib' '$REMOTE_DIR/scripts/remote' '$REMOTE_DIR/config' '$REMOTE_DIR/firecrawl'"
+ssh_cmd "mkdir -p '$REMOTE_DIR/scripts/lib' '$REMOTE_DIR/scripts/remote' '$REMOTE_DIR/config' '$REMOTE_DIR/firecrawl' '$REMOTE_DIR/artifacts'"
 
 # Prefer rsync if available both sides
 if command -v rsync >/dev/null 2>&1 && ssh_cmd "command -v rsync >/dev/null 2>&1"; then
@@ -114,6 +116,10 @@ if command -v rsync >/dev/null 2>&1 && ssh_cmd "command -v rsync >/dev/null 2>&1
   rsync -az -e "$RSYNC_SSH" \
     --exclude '.env' \
     "$ROOT/firecrawl/" "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/firecrawl/"
+  if [[ -d "$ROOT/artifacts" ]]; then
+    rsync -az -e "$RSYNC_SSH" \
+      "$ROOT/artifacts/" "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/artifacts/"
+  fi
 else
   scp_cmd -r "$ROOT/scripts/lib/"* "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/scripts/lib/"
   scp_cmd -r "$ROOT/scripts/remote/"* "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/scripts/remote/"
@@ -123,6 +129,10 @@ else
   ssh_cmd "mkdir -p '$REMOTE_DIR/firecrawl/lite'"
   scp_cmd "$ROOT/firecrawl/lite/"* \
     "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/firecrawl/lite/"
+  if [[ -d "$ROOT/artifacts" ]]; then
+    scp_cmd "$ROOT/artifacts/"* \
+      "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/artifacts/" 2>/dev/null || true
+  fi
 fi
 
 scp_cmd "$RUNTIME_ENV" "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/remote.env"
@@ -135,8 +145,16 @@ if [[ "$MODE" == "firecrawl" ]]; then
   exit 0
 fi
 
+if [[ "$MODE" == "artifacts" ]]; then
+  log "Installing artifacts (SOUL.md + USER.md) on VPS"
+  ssh_cmd "bash '$REMOTE_DIR/scripts/remote/install-artifacts.sh'"
+  ssh_cmd "export PATH=\"\$HOME/.local/bin:/usr/local/bin:\$PATH\"; hermes gateway restart 2>/dev/null || hermes gateway start 2>/dev/null || true"
+  log "Artifacts applied. Start a new Telegram chat (/new) so the profile reloads."
+  exit 0
+fi
+
 if [[ "$MODE" == "config-only" ]]; then
-  log "Config-only: write Hermes home + restart gateway"
+  log "Config-only: write Hermes home + artifacts + restart gateway"
   ssh_cmd "bash -s" <<EOF
 set -euo pipefail
 export PATH="\$HOME/.local/bin:/usr/local/bin:\$PATH"
@@ -144,11 +162,18 @@ HERMES_HOME="\${HERMES_HOME:-\$HOME/.hermes}"
 mkdir -p "\$HERMES_HOME"
 install -m 600 '$REMOTE_DIR/remote.env' "\$HERMES_HOME/.env"
 install -m 644 '$REMOTE_DIR/config/config.yaml.example' "\$HERMES_HOME/config.yaml"
+bash '$REMOTE_DIR/scripts/remote/install-artifacts.sh'
+bash '$REMOTE_DIR/scripts/remote/patch-hermes-docker.sh' 2>/dev/null || true
+# keep hermes CLI symlink healthy (doctor --fix can create a loop)
+if [[ -L "\$HOME/.local/bin/hermes" ]] || [[ ! -e "\$HOME/.local/bin/hermes" ]]; then
+  mkdir -p "\$HOME/.local/bin"
+  ln -sfn /usr/local/lib/hermes-agent/venv/bin/hermes "\$HOME/.local/bin/hermes" 2>/dev/null || true
+fi
 hermes gateway restart 2>/dev/null || hermes gateway start
 hermes gateway status || true
 EOF
   ssh_cmd "bash '$REMOTE_DIR/scripts/remote/healthcheck.sh'"
-  log "Config deploy done. Message your Telegram bot."
+  log "Config deploy done. Message your Telegram bot (/new to reload profile)."
   exit 0
 fi
 

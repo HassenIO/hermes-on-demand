@@ -15,14 +15,17 @@ terminal:
   timeout: 180
   lifetime_seconds: 300
   container_cpu: 1
-  container_memory: 2048
-  container_disk: 20480
+  # Keep low on small VPS (~1.5–2 GB host RAM). Raise on larger hosts.
+  container_memory: 512
+  container_disk: 10240
   container_persistent: true
   docker_network: true
   docker_persist_across_processes: true
-  # Host-visible path for Telegram MEDIA: attachments written by the agent
+  docker_shm_size: 64m
   docker_volumes:
     - "/root/.hermes/cache/documents:/output"
+    # So agent file tools can read seeded profile if they look on disk
+    - "/root/.hermes/memories:/root/.hermes/memories:ro"
 
 display:
   tool_progress: off
@@ -32,6 +35,13 @@ display:
 web:
   backend: firecrawl
 
-# Optional Telegram tweaks (platform extras also work under gateway.platforms):
-# telegram:
-#   require_mention: true
+# Built-in memory: ~/.hermes/memories/{USER,MEMORY}.md (seeded from artifacts/)
+# Injected into system prompt at session start — agent should NOT need to read_file them.
+# Format: entries separated by a line containing only §
+# Docs: https://hermes-agent.nousresearch.com/docs/user-guide/features/memory
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
+  memory_char_limit: 2200
+  user_char_limit: 1375
+  write_approval: false

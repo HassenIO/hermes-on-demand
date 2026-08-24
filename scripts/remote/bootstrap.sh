@@ -82,6 +82,16 @@ install -m 600 "$REMOTE_ENV" "$HERMES_HOME/.env"
 log "Writing $HERMES_HOME/config.yaml"
 install -m 644 "$CONFIG_SRC" "$HERMES_HOME/config.yaml"
 
+# Persona + user profile from repo artifacts/
+if [[ -f "$SCRIPT_DIR/install-artifacts.sh" ]]; then
+  bash "$SCRIPT_DIR/install-artifacts.sh"
+fi
+
+# Telegram session IDs contain ":" which breaks Docker -v paths (exit 125)
+if [[ -f "$SCRIPT_DIR/patch-hermes-docker.sh" ]]; then
+  bash "$SCRIPT_DIR/patch-hermes-docker.sh"
+fi
+
 # Ensure OpenRouter + model via CLI when available (best-effort; files are source of truth)
 if hermes config set model.provider openrouter >/dev/null 2>&1; then
   hermes config set model.default xiaomi/mimo-v2.5 >/dev/null 2>&1 || true
