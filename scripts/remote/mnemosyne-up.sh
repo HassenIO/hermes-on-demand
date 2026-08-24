@@ -112,18 +112,45 @@ fi
 log "Setting memory.provider=mnemosyne"
 hermes config set memory.provider mnemosyne 2>/dev/null || true
 
+# Never let memory provider leak into model.provider
+hermes config set model.provider openrouter 2>/dev/null || true
+hermes config set memory.provider mnemosyne 2>/dev/null || true
+
 python3 - <<'PY'
+"""Set Mnemosyne as default memory provider; disable built-in injection."""
 from pathlib import Path
 import os, re
-p = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes")) / "config.yaml"
+
+p = Path(os.environ.get("HERMES_HOME", str(Path.home() / ".hermes"))) / "config.yaml"
 text = p.read_text() if p.exists() else ""
+
+# Guard: model.provider must remain an LLM provider
+text = re.sub(
+    r"(?m)^(model:\n(?:  [^\n]*\n)*?  provider:\s*)mnemosyne\s*$",
+    r"\1openrouter",
+    text,
+)
+
+mem_block = """memory:
+  provider: mnemosyne
+  memory_enabled: false
+  user_profile_enabled: false
+  memory_char_limit: 2200
+  user_char_limit: 1375
+  write_approval: false
+"""
+
 if re.search(r"(?m)^memory:\s*$", text):
-    if re.search(r"(?m)^\s+provider:\s*", text):
-        text = re.sub(r"(?m)^(\s+provider:\s*).*$", r"\1mnemosyne", text)
-    else:
-        text = re.sub(r"(?m)^(memory:\s*)$", r"\1\n  provider: mnemosyne", text)
+    # Replace entire memory: section through next top-level key or EOF
+    text = re.sub(
+        r"(?ms)^memory:\n(?:  [^\n]*\n?)*",
+        mem_block if mem_block.endswith("\n") else mem_block + "\n",
+        text,
+        count=1,
+    )
 else:
-    text = text.rstrip() + "\n\nmemory:\n  provider: mnemosyne\n  memory_enabled: true\n  user_profile_enabled: true\n"
+    text = text.rstrip() + "\n\n" + mem_block
+
 p.write_text(text if text.endswith("\n") else text + "\n")
 print(f"updated {p}")
 PY

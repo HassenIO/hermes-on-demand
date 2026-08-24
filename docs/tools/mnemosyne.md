@@ -40,10 +40,21 @@ On small VPS (~1.5–2 GB), default `embeddings` is used. When `OPENROUTER_API_K
 
 ```bash
 # On VPS
-hermes memory status          # Provider: mnemosyne
+hermes memory status          # Provider: mnemosyne ← active
 ~/.hermes/.mnemosyne/venv/bin/mnemosyne stats
 hermes tools list | grep mnemosyne_
 ```
+
+Default config (`config/config.yaml.example`):
+
+```yaml
+memory:
+  provider: mnemosyne          # default external provider
+  memory_enabled: false        # built-in MEMORY.md off (avoid duplicate tokens)
+  user_profile_enabled: false  # built-in USER.md injection off
+```
+
+Built-in `artifacts/` files still deploy to disk for rollback/seeds; Mnemosyne is what the agent uses at runtime.
 
 In Telegram: **`/new`**, then use the agent normally (Mnemosyne captures turns and exposes `mnemosyne_*` tools).
 

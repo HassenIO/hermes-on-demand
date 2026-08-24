@@ -24,7 +24,6 @@ terminal:
   docker_shm_size: 64m
   docker_volumes:
     - "/root/.hermes/cache/documents:/output"
-    # So agent file tools can read seeded profile if they look on disk
     - "/root/.hermes/memories:/root/.hermes/memories:ro"
 
 display:
@@ -35,17 +34,16 @@ display:
 web:
   backend: firecrawl
 
-# Built-in memory: ~/.hermes/memories/{USER,MEMORY}.md (seeded from artifacts/)
-# Injected into system prompt at session start — agent should NOT need to read_file them.
-# Format: entries separated by a line containing only §
-# Docs: https://hermes-agent.nousresearch.com/docs/user-guide/features/memory
-# Mnemosyne is installed into a side-venv under ~/.hermes/.mnemosyne/venv
-# (survives hermes update). After ./scripts/deploy.sh --mnemosyne:
+# Mnemosyne = default memory provider (side-venv: ~/.hermes/.mnemosyne/venv).
+# Install: ./scripts/deploy.sh --mnemosyne
+# Docs: https://github.com/mnemosyne-oss/mnemosyne/blob/main/docs/hermes-integration.md
+#
+# Built-in MEMORY.md/USER.md injection is off to avoid duplicate context.
+# Seeds still live in artifacts/ and on disk for rollback.
 memory:
   provider: mnemosyne
-  # Built-in MEMORY.md/USER.md stay available as rollback; Mnemosyne is primary.
-  memory_enabled: true
-  user_profile_enabled: true
+  memory_enabled: false
+  user_profile_enabled: false
   memory_char_limit: 2200
   user_char_limit: 1375
   write_approval: false
