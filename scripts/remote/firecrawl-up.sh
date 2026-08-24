@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs ON the VPS. Starts Firecrawl-compatible API on localhost:3002 and wires Hermes.
+# Runs ON the VPS. Starts Firecrawl lite (extract) + SearXNG (search) and wires Hermes.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -29,7 +29,13 @@ if [[ ! -f "$FC_DIR/.env" ]]; then
   fi
 fi
 
-# Free RAM: stop any previous full stack that may be thrashing
+# Ensure SearXNG secret is not the placeholder
+SETTINGS="$FC_DIR/searxng/settings.yml"
+if [[ -f "$SETTINGS" ]] && grep -q 'hermes-searxng-change-me' "$SETTINGS" 2>/dev/null; then
+  sk="$(openssl rand -hex 32 2>/dev/null || head -c 32 /dev/urandom | xxd -p)"
+  sed -i "s/hermes-searxng-change-me/${sk}/" "$SETTINGS"
+fi
+
 cd "$FC_DIR"
 docker compose --profile full down --remove-orphans 2>/dev/null || true
 docker compose down --remove-orphans 2>/dev/null || true
@@ -39,12 +45,13 @@ if [[ "$FC_MODE" == "full" ]]; then
   docker compose --profile full pull
   docker compose --profile full up -d
 else
-  log "Starting Firecrawl LITE (Hermes-compatible /v2/scrape + /v2/search)"
+  log "Starting SearXNG + Firecrawl LITE (search + extract)"
+  docker compose pull searxng 2>/dev/null || true
   docker compose build lite
-  docker compose up -d lite
+  docker compose up -d searxng lite
 fi
 
-log "Waiting for API on 127.0.0.1:3002"
+log "Waiting for Firecrawl API on 127.0.0.1:3002"
 ok=0
 for _ in $(seq 1 60); do
   if curl -fsS --max-time 3 "http://127.0.0.1:3002/v0/health/readiness" >/dev/null 2>&1; then
@@ -61,45 +68,102 @@ fi
 curl -fsS "http://127.0.0.1:3002/v0/health/readiness"
 echo
 
+if [[ "$FC_MODE" != "full" ]]; then
+  log "Waiting for SearXNG on 127.0.0.1:8888"
+  sok=0
+  for _ in $(seq 1 40); do
+    if curl -fsS --max-time 5 "http://127.0.0.1:8888/search?q=test&format=json" >/dev/null 2>&1; then
+      sok=1
+      break
+    fi
+    sleep 3
+  done
+  if [[ "$sok" -ne 1 ]]; then
+    docker compose logs --tail=80 searxng || true
+    warn "SearXNG not ready — Hermes search may fail until it is"
+  else
+    n="$(curl -fsS --max-time 20 "http://127.0.0.1:8888/search?q=hermes+agent&format=json" \
+      | python3 -c 'import sys,json; print(len(json.load(sys.stdin).get("results") or []))' 2>/dev/null || echo 0)"
+    log "SearXNG OK ($n results for sample query)"
+  fi
+fi
+
 log "Smoke scrape"
 curl -fsS --max-time 90 -X POST "http://127.0.0.1:3002/v2/scrape" \
   -H 'Content-Type: application/json' \
   -d '{"url":"https://example.com","formats":["markdown"],"timeout":60000}' \
   | python3 -c 'import sys,json; d=json.load(sys.stdin); assert d.get("success") is True, d; print("scrape ok, markdown chars:", len((d.get("data") or {}).get("markdown") or ""))'
 
-log "Pointing Hermes at local Firecrawl"
+log "Smoke search (Firecrawl /v2/search)"
+curl -fsS --max-time 45 -X POST "http://127.0.0.1:3002/v2/search" \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"hermes agent nous","limit":3}' \
+  | python3 -c 'import sys,json; d=json.load(sys.stdin); assert d.get("success"), d; w=(d.get("data") or {}).get("web") or []; print("search ok, n=", len(w), "backend=", (d.get("data") or {}).get("backend")); print("first:", (w[0].get("title") if w else "")[:80])' \
+  || warn "lite /v2/search smoke failed (SearXNG path may still work for Hermes)"
+
+log "Pointing Hermes at local Firecrawl + SearXNG"
 mkdir -p "$HERMES_HOME"
 ENV_FILE="$HERMES_HOME/.env"
 touch "$ENV_FILE"
 chmod 600 "$ENV_FILE"
-if grep -q '^FIRECRAWL_API_URL=' "$ENV_FILE" 2>/dev/null; then
-  sed -i 's|^FIRECRAWL_API_URL=.*|FIRECRAWL_API_URL=http://127.0.0.1:3002|' "$ENV_FILE"
-else
-  printf '\nFIRECRAWL_API_URL=http://127.0.0.1:3002\n' >>"$ENV_FILE"
-fi
+
+upsert_env() {
+  local key="$1" val="$2"
+  if grep -q "^${key}=" "$ENV_FILE" 2>/dev/null; then
+    sed -i "s|^${key}=.*|${key}=${val}|" "$ENV_FILE"
+  else
+    printf '\n%s=%s\n' "$key" "$val" >>"$ENV_FILE"
+  fi
+}
+upsert_env FIRECRAWL_API_URL "http://127.0.0.1:3002"
+upsert_env SEARXNG_URL "http://127.0.0.1:8888"
 
 CFG="$HERMES_HOME/config.yaml"
-if [[ -f "$CFG" ]]; then
-  if grep -qE '^\s*backend:\s*firecrawl\s*$' "$CFG"; then
-    :
-  elif grep -q '^web:' "$CFG"; then
-    if grep -qE '^\s+backend:' "$CFG"; then
-      sed -i 's|^\(\s*backend:\).*|\1 firecrawl|' "$CFG"
-    else
-      awk 'BEGIN{d=0} /^web:/{print; print "  backend: firecrawl"; d=1; next} {print}' \
-        "$CFG" >"${CFG}.tmp" && mv "${CFG}.tmp" "$CFG"
-    fi
-  else
-    printf '\nweb:\n  backend: firecrawl\n' >>"$CFG"
-  fi
+if [[ ! -f "$CFG" ]]; then
+  cat >"$CFG" <<'YAML'
+web:
+  backend: firecrawl
+  search_backend: searxng
+  extract_backend: firecrawl
+YAML
 else
-  printf 'web:\n  backend: firecrawl\n' >"$CFG"
+  # Ensure web block has split backends (search=searxng, extract=firecrawl)
+  python3 - "$CFG" <<'PY'
+from pathlib import Path
+import re, sys
+p = Path(sys.argv[1])
+t = p.read_text()
+if not re.search(r"(?m)^web:\s*$", t):
+    t = t.rstrip() + "\n\nweb:\n  backend: firecrawl\n  search_backend: searxng\n  extract_backend: firecrawl\n"
+else:
+    m = re.search(r"(?ms)^web:\n(.*?)(?=^[a-zA-Z_]|\Z)", t)
+    if m:
+        start, stop = m.start(), m.end()
+        before, block, after = t[:start], t[start:stop], t[stop:]
+        def set_key(block, key, val):
+            if re.search(rf"(?m)^\s+{key}:\s*", block):
+                return re.sub(rf"(?m)^(\s+{key}:\s*).*$", rf"\1{val}", block, count=1)
+            return block.rstrip() + f"\n  {key}: {val}\n"
+        block = set_key(block, "backend", "firecrawl")
+        block = set_key(block, "search_backend", "searxng")
+        block = set_key(block, "extract_backend", "firecrawl")
+        if not block.endswith("\n"):
+            block += "\n"
+        t = before + block + after
+p.write_text(t if t.endswith("\n") else t + "\n")
+print(f"updated web backends in {p}")
+PY
 fi
 
 export PATH="${HOME}/.local/bin:/usr/local/bin:${PATH}"
 if command -v hermes >/dev/null 2>&1; then
   hermes config set web.backend firecrawl >/dev/null 2>&1 || true
+  hermes config set web.search_backend searxng >/dev/null 2>&1 || true
+  hermes config set web.extract_backend firecrawl >/dev/null 2>&1 || true
   hermes gateway restart 2>/dev/null || hermes gateway start 2>/dev/null || true
 fi
 
-log "Ready: FIRECRAWL_API_URL=http://127.0.0.1:3002 (mode=${FC_MODE})"
+log "Ready:"
+log "  extract: FIRECRAWL_API_URL=http://127.0.0.1:3002 (lite)"
+log "  search:  SEARXNG_URL=http://127.0.0.1:8888"
+log "  config:  web.search_backend=searxng  web.extract_backend=firecrawl"

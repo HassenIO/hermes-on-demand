@@ -1,0 +1,22 @@
+# Minimal SearXNG settings for Hermes web_search (JSON API enabled).
+# Docs: https://docs.searxng.org/admin/settings/
+use_default_settings: true
+
+server:
+  # Overwritten at container start if empty; firecrawl-up sets a random key.
+  secret_key: "hermes-searxng-change-me"
+  limiter: false
+  image_proxy: false
+  bind_address: "0.0.0.0"
+  port: 8080
+
+search:
+  safe_search: 0
+  autocomplete: ""
+  default_lang: "en"
+  formats:
+    - html
+    - json
+
+ui:
+  static_use_hash: true

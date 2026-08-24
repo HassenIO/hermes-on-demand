@@ -35,9 +35,13 @@ display:
   tool_progress: off
   busy_input_mode: interrupt
 
-# Self-hosted Firecrawl on the VPS (see firecrawl/ + ./scripts/deploy.sh --firecrawl)
+# Web tools: SearXNG (self-hosted search) + Firecrawl lite (extract)
+# Deploy: ./scripts/deploy.sh --firecrawl
+# Env: SEARXNG_URL=http://127.0.0.1:8888  FIRECRAWL_API_URL=http://127.0.0.1:3002
 web:
   backend: firecrawl
+  search_backend: searxng
+  extract_backend: firecrawl
 
 # Mnemosyne = default memory provider (side-venv: ~/.hermes/.mnemosyne/venv).
 # Install: ./scripts/deploy.sh --mnemosyne

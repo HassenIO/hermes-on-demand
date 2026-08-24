@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir \
     lxml_html_clean==0.4.2 \
     markdownify==1.1.0 \
     readability-lxml==0.8.1 \
+    ddgs==9.0.0 \
     duckduckgo-search==8.0.2
 
 COPY app.py .

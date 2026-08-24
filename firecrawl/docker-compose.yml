@@ -21,13 +21,32 @@ x-logging: &default-logging
     max-file: "3"
 
 services:
-  # ── Default: lite Firecrawl-compatible API ──────────────────────────
+  # ── SearXNG: reliable web_search from VPS IPs (Hermes search_backend) ─
+  searxng:
+    image: docker.io/searxng/searxng:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8888:8080"
+    volumes:
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+    environment:
+      - SEARXNG_BASE_URL=http://127.0.0.1:8888/
+    cpus: 0.5
+    mem_limit: 384m
+    logging: *default-logging
+
+  # ── Default: lite Firecrawl-compatible API (extract / scrape) ───────
   lite:
     build: ./lite
     image: hermes-firecrawl-lite:local
     restart: unless-stopped
     ports:
       - "127.0.0.1:3002:3002"
+    environment:
+      # Prefer in-compose SearXNG for /v2/search fallback
+      - SEARXNG_INTERNAL_URL=http://searxng:8080
+    depends_on:
+      - searxng
     cpus: 0.5
     mem_limit: 384m
     logging: *default-logging

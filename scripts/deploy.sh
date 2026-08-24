@@ -87,8 +87,9 @@ trap 'rm -f "$RUNTIME_ENV"' EXIT
   [[ -n "${TELEGRAM_GROUP_ALLOWED_CHATS:-}" ]] && echo "TELEGRAM_GROUP_ALLOWED_CHATS=${TELEGRAM_GROUP_ALLOWED_CHATS}"
   [[ -n "${GATEWAY_ALLOW_ALL_USERS:-}" ]] && echo "GATEWAY_ALLOW_ALL_USERS=${GATEWAY_ALLOW_ALL_USERS}"
   [[ -n "${FIRECRAWL_API_KEY:-}" ]] && echo "FIRECRAWL_API_KEY=${FIRECRAWL_API_KEY}"
-  # Self-hosted Firecrawl (default when using ./scripts/deploy.sh --firecrawl)
+  # Self-hosted web stack (./scripts/deploy.sh --firecrawl)
   echo "FIRECRAWL_API_URL=${FIRECRAWL_API_URL:-http://127.0.0.1:3002}"
+  echo "SEARXNG_URL=${SEARXNG_URL:-http://127.0.0.1:8888}"
   [[ -n "${PARALLEL_API_KEY:-}" ]] && echo "PARALLEL_API_KEY=${PARALLEL_API_KEY}"
   [[ -n "${EXA_API_KEY:-}" ]] && echo "EXA_API_KEY=${EXA_API_KEY}"
   [[ -n "${VOICE_TOOLS_OPENAI_KEY:-}" ]] && echo "VOICE_TOOLS_OPENAI_KEY=${VOICE_TOOLS_OPENAI_KEY}"
