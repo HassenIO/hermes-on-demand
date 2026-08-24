@@ -189,6 +189,16 @@ fi
 
 log "Full remote bootstrap (this may take several minutes)"
 ssh_cmd "bash '$REMOTE_DIR/scripts/remote/bootstrap.sh'"
+
+# Default stack includes Firecrawl lite (small VPS). Opt out: SKIP_FIRECRAWL=1
+if [[ "${SKIP_FIRECRAWL:-}" != "1" ]]; then
+  log "Starting Firecrawl lite (SKIP_FIRECRAWL=1 to skip)"
+  ssh_cmd "FIRECRAWL_MODE='${FIRECRAWL_MODE:-lite}' bash '$REMOTE_DIR/scripts/remote/firecrawl-up.sh'" \
+    || warn "Firecrawl setup failed — Hermes gateway may still work; re-run ./scripts/deploy.sh --firecrawl"
+else
+  log "Skipping Firecrawl (SKIP_FIRECRAWL=1)"
+fi
+
 ssh_cmd "bash '$REMOTE_DIR/scripts/remote/healthcheck.sh'"
 
-log "Deploy complete. Open Telegram and message your bot."
+log "Deploy complete. Open Telegram, optionally /sethome, then /new and message your bot."

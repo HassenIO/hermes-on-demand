@@ -83,6 +83,13 @@ if command -v hermes >/dev/null 2>&1; then
   fi
 fi
 
+# Firecrawl lite (optional but default on full deploy)
+if curl -fsS --max-time 3 "http://127.0.0.1:3002/v0/health/readiness" >/dev/null 2>&1; then
+  log "OK  Firecrawl API http://127.0.0.1:3002"
+else
+  warn "Firecrawl not reachable on :3002 (run ./scripts/deploy.sh --firecrawl if needed)"
+fi
+
 if [[ "$failed" -ne 0 ]]; then
   die "healthcheck failed"
 fi
