@@ -39,7 +39,11 @@ web:
 # Injected into system prompt at session start — agent should NOT need to read_file them.
 # Format: entries separated by a line containing only §
 # Docs: https://hermes-agent.nousresearch.com/docs/user-guide/features/memory
+# Mnemosyne is installed into a side-venv under ~/.hermes/.mnemosyne/venv
+# (survives hermes update). After ./scripts/deploy.sh --mnemosyne:
 memory:
+  provider: mnemosyne
+  # Built-in MEMORY.md/USER.md stay available as rollback; Mnemosyne is primary.
   memory_enabled: true
   user_profile_enabled: true
   memory_char_limit: 2200

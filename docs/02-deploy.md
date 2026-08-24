@@ -26,7 +26,8 @@ ssh-add -l                    # SSH key in agent
    - Gateway user service + linger + start
    - Pre-pull Docker terminal image
 3. **Firecrawl lite** on `127.0.0.1:3002` (opt out: `SKIP_FIRECRAWL=1`)
-4. **healthcheck** (re-applies Docker patch if missing after upgrades)
+4. **Mnemosyne** side-venv + Hermes wrapper plugin (opt out: `SKIP_MNEMOSYNE=1`)
+5. **healthcheck** (re-applies Docker patch if missing after upgrades)
 
 ### After first deploy (Telegram)
 
@@ -43,7 +44,8 @@ SKIP_FIRECRAWL=1 ./scripts/deploy.sh  # full without Firecrawl
 ./scripts/deploy.sh --config-only   # secrets + config + artifacts + Docker patch
 ./scripts/deploy.sh --artifacts     # profile files only
 ./scripts/deploy.sh --firecrawl     # Firecrawl only
-./scripts/deploy.sh --update        # hermes update + re-patch + restart
+./scripts/deploy.sh --mnemosyne     # Mnemosyne side-venv + wrapper only
+./scripts/deploy.sh --update        # hermes + Mnemosyne upgrade + re-patch
 ./scripts/deploy.sh --health        # healthcheck (self-heals Docker patch)
 ```
 

@@ -7,7 +7,8 @@ Each tool gets its own page under `docs/tools/`. Code and compose files live nex
 | Tool | Doc | Deploy |
 |------|-----|--------|
 | Firecrawl (web scrape / search) | [firecrawl.md](firecrawl.md) | `./scripts/deploy.sh --firecrawl` |
-| Memory / USER profile | [memory-profile.md](memory-profile.md) | `./scripts/deploy.sh --artifacts` |
+| Memory / USER profile (built-in) | [memory-profile.md](memory-profile.md) | `./scripts/deploy.sh --artifacts` |
+| Mnemosyne (external memory) | [mnemosyne.md](mnemosyne.md) | `./scripts/deploy.sh --mnemosyne` |
 
 ## Adding a future tool
 

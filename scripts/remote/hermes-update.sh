@@ -39,9 +39,24 @@ if [[ -f "$SCRIPT_DIR/install-artifacts.sh" ]]; then
   bash "$SCRIPT_DIR/install-artifacts.sh" || true
 fi
 
+# Upgrade Mnemosyne side-venv if present (survives Hermes venv rebuilds)
+VENV="${MNEMOSYNE_VENV:-$HERMES_HOME/.mnemosyne/venv}"
+if [[ -x "$VENV/bin/python" && -x "$VENV/bin/mnemosyne-hermes" ]]; then
+  log "Upgrading Mnemosyne side-venv"
+  PROFILE="${MNEMOSYNE_PROFILE:-embeddings}"
+  case "$PROFILE" in
+    all) REQ="mnemosyne-memory[all]" ;;
+    *) REQ="mnemosyne-memory[embeddings]" ;;
+  esac
+  "$VENV/bin/python" -m pip install --upgrade "$REQ" mnemosyne-hermes || warn "Mnemosyne pip upgrade failed"
+  "$VENV/bin/mnemosyne-hermes" install --mode wrapper --python "$VENV/bin/python" --force || warn "wrapper refresh failed"
+  "$VENV/bin/mnemosyne-hermes" status || true
+fi
+
 log "Restarting gateway"
 hermes gateway restart 2>/dev/null || hermes gateway start 2>/dev/null || true
 sleep 3
 hermes gateway status 2>/dev/null || true
+hermes memory status 2>&1 || true
 
 log "Update + repair finished"

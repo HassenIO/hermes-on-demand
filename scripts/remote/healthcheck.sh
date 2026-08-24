@@ -90,6 +90,21 @@ else
   warn "Firecrawl not reachable on :3002 (run ./scripts/deploy.sh --firecrawl if needed)"
 fi
 
+# Mnemosyne side-venv + provider selection
+VENV="${MNEMOSYNE_VENV:-$HERMES_HOME/.mnemosyne/venv}"
+if [[ -x "$VENV/bin/mnemosyne-hermes" ]]; then
+  log "OK  Mnemosyne side-venv present ($VENV)"
+  if command -v hermes >/dev/null 2>&1; then
+    if hermes memory status 2>&1 | grep -qi 'Provider:.*mnemosyne'; then
+      log "OK  memory.provider=mnemosyne"
+    else
+      warn "Mnemosyne installed but not selected (hermes config set memory.provider mnemosyne)"
+    fi
+  fi
+else
+  warn "Mnemosyne side-venv missing (run ./scripts/deploy.sh --mnemosyne)"
+fi
+
 if [[ "$failed" -ne 0 ]]; then
   die "healthcheck failed"
 fi

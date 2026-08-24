@@ -6,7 +6,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=lib/common.sh
 source "$ROOT/scripts/lib/common.sh"
 
-MODE="full" # full | config-only | health | firecrawl | artifacts | update
+MODE="full" # full | config-only | health | firecrawl | artifacts | update | mnemosyne
 for arg in "$@"; do
   case "$arg" in
     --config-only) MODE="config-only" ;;
@@ -14,16 +14,18 @@ for arg in "$@"; do
     --firecrawl) MODE="firecrawl" ;;
     --artifacts) MODE="artifacts" ;;
     --update) MODE="update" ;;
+    --mnemosyne) MODE="mnemosyne" ;;
     -h|--help)
       cat <<'EOF'
-Usage: ./scripts/deploy.sh [--config-only|--health|--firecrawl|--artifacts|--update]
+Usage: ./scripts/deploy.sh [--config-only|--health|--firecrawl|--artifacts|--update|--mnemosyne]
 
-  (default)      Full remote bootstrap (Hermes + gateway + Firecrawl lite + artifacts)
+  (default)      Full remote bootstrap (Hermes + gateway + Firecrawl lite + Mnemosyne + artifacts)
   --config-only  Push secrets + config.yaml + artifacts, re-apply Docker patch, restart
   --artifacts    Push artifacts/USER.md + SOUL.md + MEMORY.md only
   --health       Remote healthcheck (re-applies Docker patch if missing)
   --firecrawl    Deploy/start self-hosted Firecrawl only
-  --update       Remote hermes update + re-apply Docker patch + restart gateway
+  --mnemosyne    Install/refresh Mnemosyne side-venv + Hermes wrapper plugin
+  --update       hermes update + Docker patch + Mnemosyne side-venv upgrade + restart
 EOF
       exit 0
       ;;
@@ -147,6 +149,13 @@ if [[ "$MODE" == "firecrawl" ]]; then
   exit 0
 fi
 
+if [[ "$MODE" == "mnemosyne" ]]; then
+  log "Installing/refreshing Mnemosyne (side-venv + wrapper)"
+  ssh_cmd "MNEMOSYNE_PROFILE='${MNEMOSYNE_PROFILE:-embeddings}' bash '$REMOTE_DIR/scripts/remote/mnemosyne-up.sh'"
+  log "Mnemosyne done. /new in Telegram, then hermes memory status."
+  exit 0
+fi
+
 if [[ "$MODE" == "artifacts" ]]; then
   log "Installing artifacts (SOUL.md + USER.md) on VPS"
   ssh_cmd "bash '$REMOTE_DIR/scripts/remote/install-artifacts.sh'"
@@ -197,6 +206,15 @@ if [[ "${SKIP_FIRECRAWL:-}" != "1" ]]; then
     || warn "Firecrawl setup failed — Hermes gateway may still work; re-run ./scripts/deploy.sh --firecrawl"
 else
   log "Skipping Firecrawl (SKIP_FIRECRAWL=1)"
+fi
+
+# Default stack includes Mnemosyne (side-venv survives hermes update). Opt out: SKIP_MNEMOSYNE=1
+if [[ "${SKIP_MNEMOSYNE:-}" != "1" ]]; then
+  log "Installing Mnemosyne memory provider (SKIP_MNEMOSYNE=1 to skip)"
+  ssh_cmd "MNEMOSYNE_PROFILE='${MNEMOSYNE_PROFILE:-embeddings}' bash '$REMOTE_DIR/scripts/remote/mnemosyne-up.sh'" \
+    || warn "Mnemosyne setup failed — re-run ./scripts/deploy.sh --mnemosyne"
+else
+  log "Skipping Mnemosyne (SKIP_MNEMOSYNE=1)"
 fi
 
 ssh_cmd "bash '$REMOTE_DIR/scripts/remote/healthcheck.sh'"

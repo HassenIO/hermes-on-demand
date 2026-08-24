@@ -27,13 +27,14 @@ Then in Telegram: message the bot → optional `/sethome` → **`/new`** → cha
 ## Commands
 
 ```bash
-./scripts/deploy.sh              # full stack
+./scripts/deploy.sh              # full stack (Hermes + Firecrawl + Mnemosyne)
 ./scripts/deploy.sh --config-only
 ./scripts/deploy.sh --artifacts  # SOUL / USER / MEMORY only
 ./scripts/deploy.sh --firecrawl  # scrape API only
-./scripts/deploy.sh --update     # hermes update + re-apply local fixes
+./scripts/deploy.sh --mnemosyne  # Mnemosyne side-venv + Hermes wrapper
+./scripts/deploy.sh --update     # hermes + Mnemosyne upgrade + local fixes
 ./scripts/deploy.sh --health
-SKIP_FIRECRAWL=1 ./scripts/deploy.sh   # full without Firecrawl
+SKIP_FIRECRAWL=1 SKIP_MNEMOSYNE=1 ./scripts/deploy.sh
 ```
 
 ## Documentation
