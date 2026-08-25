@@ -59,9 +59,25 @@ notion-cli find-db "Freelance Opportunities"
 notion-cli get <page-or-database-id>
 notion-cli children <page-id>
 notion-cli create-report --title "2026-08-25 — Weekly" --body "..."
+
+# Database (Job Hunt / Freelance Opportunities)
+notion-cli db-schema
+notion-cli db-query
+notion-cli db-create-opp --role "…" --company "…" --location "…" --rate 700 \
+  --link "https://…" --summary "…" --why "…"
+notion-cli archive <page_id>
 ```
 
 JSON on stdout. Errors on stderr, non-zero exit.
+
+### Job Hunt IDs (defaults in CLI + `~/.hermes/notion/config.env`)
+
+| Env | Default |
+|-----|---------|
+| `NOTION_FREELANCE_DB_ID` | `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` |
+| `NOTION_ROLE_TEMPLATE_PAGE_ID` | `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` |
+
+`db-create-opp` creates a DB row and copies the “Role Name” template body with placeholder substitution. Dedupes on Role Name + Company.
 
 ## Telegram usage
 
