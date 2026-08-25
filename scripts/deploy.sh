@@ -22,7 +22,7 @@ Usage: ./scripts/deploy.sh [--config-only|--health|--firecrawl|--artifacts|--upd
 
   (default)      Full remote bootstrap (Hermes + Firecrawl + Mnemosyne + Agent-Reach + artifacts)
   --config-only  Push secrets + config.yaml + artifacts, re-apply Docker patch, restart
-  --artifacts    Push artifacts/USER.md + SOUL.md + MEMORY.md only
+  --artifacts    Push artifacts (SOUL/USER/MEMORY/CV) only
   --health       Remote healthcheck (re-applies Docker patch if missing)
   --firecrawl    Deploy/start self-hosted Firecrawl only
   --mnemosyne    Install/refresh Mnemosyne side-venv + Hermes wrapper plugin

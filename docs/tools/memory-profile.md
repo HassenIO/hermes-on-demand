@@ -20,6 +20,9 @@ Hermes **does** use `USER.md` — the model sometimes claims otherwise because i
 | `artifacts/SOUL.md` | `~/.hermes/SOUL.md` |
 | `artifacts/USER.md` | `~/.hermes/memories/USER.md` |
 | `artifacts/MEMORY.md` | `~/.hermes/memories/MEMORY.md` |
+| `artifacts/CV.md` | `~/.hermes/CV.md` (on-demand; not injected every turn) |
+
+`CV.md` is a full professional profile for freelancing/role-fit. `USER.md` only holds a **pointer** to `~/.hermes/CV.md` so the agent `read_file`s it when needed (avoids burning tokens every message). The Docker sandbox mounts `CV.md` read-only.
 
 Deploy:
 

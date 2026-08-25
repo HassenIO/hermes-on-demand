@@ -35,6 +35,11 @@ check "docker info" docker info >/dev/null 2>&1
 check "Hermes .env" test -f "$HERMES_HOME/.env"
 check "Hermes config.yaml" test -f "$HERMES_HOME/config.yaml"
 check "USER.md seed" test -s "$HERMES_HOME/memories/USER.md"
+if [[ -s "$HERMES_HOME/CV.md" ]]; then
+  log "OK  CV.md seed ($HERMES_HOME/CV.md)"
+else
+  warn "CV.md missing (optional — add artifacts/CV.md and ./scripts/deploy.sh --artifacts)"
+fi
 
 # Timezone (optional but recommended via TIMEZONE= in Mac .env)
 want_tz=""

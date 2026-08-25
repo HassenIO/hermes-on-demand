@@ -56,6 +56,7 @@ SKIP_FIRECRAWL=1 ./scripts/deploy.sh  # full without Firecrawl
 | `artifacts/SOUL.md` | `~/.hermes/SOUL.md` | Agent identity |
 | `artifacts/USER.md` | `~/.hermes/memories/USER.md` | User profile (`§`-delimited entries) |
 | `artifacts/MEMORY.md` | `~/.hermes/memories/MEMORY.md` | Agent notes (`§`-delimited entries) |
+| `artifacts/CV.md` | `~/.hermes/CV.md` | Full CV (on-demand read; mounted into Docker) |
 
 Format details: [tools/memory-profile.md](tools/memory-profile.md).
 

@@ -29,6 +29,7 @@ terminal:
   docker_volumes:
     - "/root/.hermes/cache/documents:/output"
     - "/root/.hermes/memories:/root/.hermes/memories:ro"
+    - "/root/.hermes/CV.md:/root/.hermes/CV.md:ro"
     - "/root/.agent-reach:/root/.agent-reach"
 
 display:

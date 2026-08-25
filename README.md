@@ -56,6 +56,7 @@ SKIP_FIRECRAWL=1 SKIP_MNEMOSYNE=1 ./scripts/deploy.sh
 artifacts/SOUL.md           # → VPS ~/.hermes/SOUL.md
 artifacts/USER.md           # → VPS ~/.hermes/memories/USER.md  (§ entries)
 artifacts/MEMORY.md         # → VPS ~/.hermes/memories/MEMORY.md (§ entries)
+artifacts/CV.md             # → VPS ~/.hermes/CV.md (on-demand freelancing/CV)
 config/config.yaml.example  # model + docker terminal + web + memory
 docs/
 firecrawl/                  # lite (default) + full profile
