@@ -1,0 +1,7 @@
+name: notion
+type: mcp+skill
+default: false  # opt-in when NOTION_API_KEY is set
+skip_env: SKIP_NOTION
+flag: --notion
+remote: scripts/remote/notion-up.sh
+notes: "Notion MCP (internal token) + notion-reports skill for child pages under a parent"

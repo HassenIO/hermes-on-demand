@@ -62,6 +62,15 @@ if docker image inspect "${AGENT_REACH_IMAGE:-hermes-terminal:agent-reach}" >/de
   fi
 fi
 
+# Refresh Notion MCP + skill if previously configured
+if [[ -f "$HERMES_HOME/skills/notion-reports/SKILL.md" ]] \
+  || grep -qE '^\s+notion:' "$HERMES_HOME/config.yaml" 2>/dev/null; then
+  if [[ -f "$SCRIPT_DIR/notion-up.sh" ]]; then
+    log "Refreshing Notion (MCP + skill)"
+    bash "$SCRIPT_DIR/notion-up.sh" || warn "Notion refresh failed"
+  fi
+fi
+
 log "Restarting gateway"
 hermes gateway restart 2>/dev/null || hermes gateway start 2>/dev/null || true
 sleep 3

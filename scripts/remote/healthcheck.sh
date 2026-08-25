@@ -153,6 +153,29 @@ if command -v hermes >/dev/null 2>&1; then
   fi
 fi
 
+# Notion (optional)
+notion_key=""
+if [[ -f "$HERMES_HOME/.env" ]]; then
+  notion_key="$(grep -E '^NOTION_API_KEY=' "$HERMES_HOME/.env" 2>/dev/null | tail -1 | cut -d= -f2- || true)"
+fi
+if [[ -n "$notion_key" ]]; then
+  if [[ -f "$HERMES_HOME/skills/notion-reports/SKILL.md" ]]; then
+    log "OK  Notion skill installed"
+  else
+    warn "Notion key set but skill missing (./scripts/deploy.sh --notion)"
+  fi
+  if grep -qE '^\s+notion:' "$HERMES_HOME/config.yaml" 2>/dev/null; then
+    log "OK  mcp_servers.notion present"
+  else
+    warn "Notion key set but mcp_servers.notion missing"
+  fi
+  if grep -qE '^NOTION_REPORTS_PARENT_PAGE_ID=.' "$HERMES_HOME/.env" 2>/dev/null; then
+    log "OK  NOTION_REPORTS_PARENT_PAGE_ID set"
+  else
+    warn "NOTION_REPORTS_PARENT_PAGE_ID missing"
+  fi
+fi
+
 if [[ "$failed" -ne 0 ]]; then
   die "healthcheck failed"
 fi

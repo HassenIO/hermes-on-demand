@@ -6,7 +6,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=lib/common.sh
 source "$ROOT/scripts/lib/common.sh"
 
-MODE="full" # full | config-only | health | firecrawl | artifacts | update | mnemosyne | agent-reach
+MODE="full" # full | config-only | health | firecrawl | artifacts | update | mnemosyne | agent-reach | notion
 for arg in "$@"; do
   case "$arg" in
     --config-only) MODE="config-only" ;;
@@ -16,9 +16,10 @@ for arg in "$@"; do
     --update) MODE="update" ;;
     --mnemosyne) MODE="mnemosyne" ;;
     --agent-reach) MODE="agent-reach" ;;
+    --notion) MODE="notion" ;;
     -h|--help)
       cat <<'EOF'
-Usage: ./scripts/deploy.sh [--config-only|--health|--firecrawl|--artifacts|--update|--mnemosyne|--agent-reach]
+Usage: ./scripts/deploy.sh [--config-only|--health|--firecrawl|--artifacts|--update|--mnemosyne|--agent-reach|--notion]
 
   (default)      Full remote bootstrap (Hermes + Firecrawl + Mnemosyne + Agent-Reach + artifacts)
   --config-only  Push secrets + config.yaml + artifacts, re-apply Docker patch, restart
@@ -27,7 +28,8 @@ Usage: ./scripts/deploy.sh [--config-only|--health|--firecrawl|--artifacts|--upd
   --firecrawl    Deploy/start self-hosted Firecrawl only
   --mnemosyne    Install/refresh Mnemosyne side-venv + Hermes wrapper plugin
   --agent-reach  Build terminal image + install Agent-Reach skill (zero-config web CLIs)
-  --update       hermes update + Docker patch + Mnemosyne + Agent-Reach refresh + restart
+  --notion       Notion MCP + notion-reports skill (requires NOTION_API_KEY + parent page id)
+  --update       hermes update + Docker patch + Mnemosyne + Agent-Reach + Notion refresh
 EOF
       exit 0
       ;;
@@ -101,6 +103,13 @@ trap 'rm -f "$RUNTIME_ENV"' EXIT
   # VPS system timezone (IANA). Applied on every deploy via set-timezone.sh
   echo "TIMEZONE=${TIMEZONE:-Asia/Dubai}"
   echo "TZ=${TIMEZONE:-Asia/Dubai}"
+  # Notion reports (optional — ./scripts/deploy.sh --notion)
+  if [[ -n "${NOTION_API_KEY:-}" ]]; then
+    echo "NOTION_API_KEY=${NOTION_API_KEY}"
+    echo "NOTION_TOKEN=${NOTION_TOKEN:-$NOTION_API_KEY}"
+  fi
+  [[ -n "${NOTION_REPORTS_PARENT_PAGE_ID:-}" ]] && echo "NOTION_REPORTS_PARENT_PAGE_ID=${NOTION_REPORTS_PARENT_PAGE_ID}"
+  [[ -n "${NOTION_API_VERSION:-}" ]] && echo "NOTION_API_VERSION=${NOTION_API_VERSION}"
 } >"$RUNTIME_ENV"
 chmod 600 "$RUNTIME_ENV"
 
@@ -183,6 +192,14 @@ if [[ "$MODE" == "agent-reach" ]]; then
   exit 0
 fi
 
+if [[ "$MODE" == "notion" ]]; then
+  log "Installing Notion MCP + notion-reports skill"
+  # Ensure runtime env on VPS includes Notion keys (already in remote.env)
+  ssh_cmd "install -m 600 '$REMOTE_DIR/remote.env' \"\${HERMES_HOME:-\$HOME/.hermes}/.env\" 2>/dev/null || true; bash '$REMOTE_DIR/scripts/remote/notion-up.sh'"
+  log "Notion done. /new in Telegram, then ask to post a test report."
+  exit 0
+fi
+
 if [[ "$MODE" == "artifacts" ]]; then
   log "Installing artifacts (SOUL.md + USER.md) on VPS"
   ssh_cmd "bash '$REMOTE_DIR/scripts/remote/install-artifacts.sh'"
@@ -218,6 +235,11 @@ fi
 hermes gateway restart 2>/dev/null || hermes gateway start
 hermes gateway status || true
 EOF
+  # Re-apply Notion MCP block if keys present (config.yaml.example has no mcp_servers)
+  if [[ "${SKIP_NOTION:-}" != "1" && -n "${NOTION_API_KEY:-}" && -n "${NOTION_REPORTS_PARENT_PAGE_ID:-}" ]]; then
+    log "Re-applying Notion after config push"
+    ssh_cmd "bash '$REMOTE_DIR/scripts/remote/notion-up.sh'" || warn "Notion re-apply failed"
+  fi
   ssh_cmd "bash '$REMOTE_DIR/scripts/remote/healthcheck.sh'"
   log "Config deploy done. Message your Telegram bot (/new to reload profile)."
   exit 0
@@ -251,6 +273,17 @@ if [[ "${SKIP_AGENT_REACH:-}" != "1" ]]; then
     || warn "Agent-Reach setup failed — re-run ./scripts/deploy.sh --agent-reach"
 else
   log "Skipping Agent-Reach (SKIP_AGENT_REACH=1)"
+fi
+
+# Notion when keys present. Opt out: SKIP_NOTION=1
+if [[ "${SKIP_NOTION:-}" != "1" && -n "${NOTION_API_KEY:-}" && -n "${NOTION_REPORTS_PARENT_PAGE_ID:-}" ]]; then
+  log "Installing Notion (SKIP_NOTION=1 to skip)"
+  ssh_cmd "bash '$REMOTE_DIR/scripts/remote/notion-up.sh'" \
+    || warn "Notion setup failed — re-run ./scripts/deploy.sh --notion"
+elif [[ "${SKIP_NOTION:-}" == "1" ]]; then
+  log "Skipping Notion (SKIP_NOTION=1)"
+else
+  log "Skipping Notion (set NOTION_API_KEY + NOTION_REPORTS_PARENT_PAGE_ID to enable)"
 fi
 
 ssh_cmd "bash '$REMOTE_DIR/scripts/remote/healthcheck.sh'"

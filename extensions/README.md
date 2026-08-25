@@ -7,6 +7,7 @@ Optional capabilities deployed to the VPS alongside Hermes.
 | Firecrawl | service | `./scripts/deploy.sh --firecrawl` | [docs/tools/firecrawl.md](../docs/tools/firecrawl.md) |
 | Mnemosyne | hermes-plugin | `./scripts/deploy.sh --mnemosyne` | [docs/tools/mnemosyne.md](../docs/tools/mnemosyne.md) |
 | Agent-Reach | skill+cli | `./scripts/deploy.sh --agent-reach` | [docs/tools/agent-reach.md](../docs/tools/agent-reach.md) |
+| Notion | mcp+skill | `./scripts/deploy.sh --notion` | [docs/tools/notion.md](../docs/tools/notion.md) |
 
 See [registry.yaml](registry.yaml) for defaults and skip flags.
 
