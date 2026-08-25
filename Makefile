@@ -28,7 +28,7 @@ help: ## Show this help
 	@echo "  make setup-firecrawl     SearXNG + Firecrawl lite"
 	@echo "  make setup-mnemosyne     Mnemosyne memory provider"
 	@echo "  make setup-agent-reach   Terminal image + internet CLIs skill"
-	@echo "  make setup-notion        Notion MCP (needs both NOTION_* env vars)"
+	@echo "  make setup-notion        Notion REST CLI (needs both NOTION_* env vars)"
 	@echo ""
 	@echo "All targets:"
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -68,5 +68,5 @@ setup-mnemosyne: check-env ## Install/refresh Mnemosyne side-venv + wrapper
 setup-agent-reach: check-env ## Build agent-reach Docker image + skill
 	@$(DEPLOY) --agent-reach
 
-setup-notion: check-env ## Notion MCP + skill (no-op unless both NOTION_* vars set)
+setup-notion: check-env ## Notion REST CLI + skill (no-op unless both NOTION_* vars set)
 	@$(DEPLOY) --notion

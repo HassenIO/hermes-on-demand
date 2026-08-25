@@ -153,7 +153,7 @@ if command -v hermes >/dev/null 2>&1; then
   fi
 fi
 
-# Notion (optional — only expected when BOTH env vars are set)
+# Notion REST CLI (optional — only when BOTH env vars are set)
 notion_key=""
 notion_parent=""
 if [[ -f "$HERMES_HOME/.env" ]]; then
@@ -161,15 +161,26 @@ if [[ -f "$HERMES_HOME/.env" ]]; then
   notion_parent="$(grep -E '^NOTION_REPORTS_PARENT_PAGE_ID=.' "$HERMES_HOME/.env" 2>/dev/null | tail -1 | cut -d= -f2- || true)"
 fi
 if [[ -n "$notion_key" && -n "$notion_parent" ]]; then
+  if [[ -x "$HERMES_HOME/bin/notion-cli" ]] || command -v notion-cli >/dev/null 2>&1; then
+    log "OK  notion-cli present"
+    if notion-cli me >/dev/null 2>&1 || "$HERMES_HOME/bin/notion-cli" me >/dev/null 2>&1; then
+      log "OK  notion-cli me"
+    else
+      warn "notion-cli me failed (token or network)"
+    fi
+  else
+    warn "Notion env set but notion-cli missing (make setup-notion)"
+  fi
   if [[ -f "$HERMES_HOME/skills/notion-reports/SKILL.md" ]]; then
     log "OK  Notion skill installed"
   else
-    warn "Notion env complete but skill missing (./scripts/deploy.sh --notion)"
+    warn "Notion skill missing"
   fi
-  if grep -qE '^\s+notion:' "$HERMES_HOME/config.yaml" 2>/dev/null; then
-    log "OK  mcp_servers.notion present"
+  if grep -qE '^\s+notion:\s*$' "$HERMES_HOME/config.yaml" 2>/dev/null \
+    && grep -A5 -E '^\s+notion:\s*$' "$HERMES_HOME/config.yaml" 2>/dev/null | grep -q 'enabled:\s*true'; then
+    warn "mcp_servers.notion still enabled — prefer REST CLI (make setup-notion)"
   else
-    warn "Notion env complete but mcp_servers.notion missing"
+    log "OK  Notion MCP not active (REST CLI path)"
   fi
 elif [[ -n "$notion_key" || -n "$notion_parent" ]]; then
   warn "Notion half-configured (need BOTH NOTION_API_KEY and NOTION_REPORTS_PARENT_PAGE_ID) — ignored"

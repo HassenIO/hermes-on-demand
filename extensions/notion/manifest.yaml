@@ -1,6 +1,6 @@
 name: notion
-type: mcp+skill
+type: cli+skill
 default: false  # only when BOTH NOTION_API_KEY and NOTION_REPORTS_PARENT_PAGE_ID are set
 flag: --notion
 remote: scripts/remote/notion-up.sh
-notes: "Notion MCP (internal token) + notion-reports skill; gated by both env vars"
+notes: "Notion REST CLI + skill (no MCP); gated by both env vars"

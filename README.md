@@ -57,7 +57,7 @@ make update           # upgrade Hermes on the VPS safely
 | **`make setup-firecrawl`** | SearXNG + Firecrawl lite (search + extract) |
 | **`make setup-mnemosyne`** | Mnemosyne memory provider (side-venv) |
 | **`make setup-agent-reach`** | Custom terminal image + platform web CLIs skill |
-| **`make setup-notion`** | Notion MCP + reports skill (*no-op* unless both `NOTION_API_KEY` and `NOTION_REPORTS_PARENT_PAGE_ID` are set) |
+| **`make setup-notion`** | Notion REST CLI + skill (*no-op* unless both `NOTION_*` vars are set) |
 
 ```bash
 make setup-firecrawl

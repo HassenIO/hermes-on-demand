@@ -5,3 +5,5 @@ firecrawl/.env
 *.pem
 *.key
 .DS_Store
+__pycache__/
+*.pyc

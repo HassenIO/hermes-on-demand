@@ -28,7 +28,7 @@ Usage: ./scripts/deploy.sh [--config-only|--health|--firecrawl|--artifacts|--upd
   --firecrawl    Deploy/start self-hosted Firecrawl only
   --mnemosyne    Install/refresh Mnemosyne side-venv + Hermes wrapper plugin
   --agent-reach  Build terminal image + install Agent-Reach skill (zero-config web CLIs)
-  --notion       Notion MCP + skill (no-op unless BOTH NOTION_API_KEY and NOTION_REPORTS_PARENT_PAGE_ID are set)
+  --notion       Notion REST CLI + skill (no-op unless BOTH NOTION_* vars are set)
   --update       hermes update + Docker patch + Mnemosyne + Agent-Reach + Notion refresh
 EOF
       exit 0

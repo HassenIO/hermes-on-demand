@@ -10,7 +10,7 @@ Each tool gets its own page under `docs/tools/`. Code and compose files live nex
 | Memory / USER profile (built-in) | [memory-profile.md](memory-profile.md) | `./scripts/deploy.sh --artifacts` |
 | Mnemosyne (external memory) | [mnemosyne.md](mnemosyne.md) | `./scripts/deploy.sh --mnemosyne` |
 | Agent-Reach (platform web CLIs) | [agent-reach.md](agent-reach.md) | `./scripts/deploy.sh --agent-reach` |
-| Notion (reports pages) | [notion.md](notion.md) | `./scripts/deploy.sh --notion` |
+| Notion (REST CLI + reports) | [notion.md](notion.md) | `make setup-notion` |
 
 Extension registry: [extensions/registry.yaml](../../extensions/registry.yaml).
 

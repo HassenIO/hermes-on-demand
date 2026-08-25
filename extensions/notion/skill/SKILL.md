@@ -1,7 +1,7 @@
 ---
 name: notion-reports
-description: Post research and status reports to Notion as child pages under a configured parent page.
-version: 1.0.0
+description: Read and write Notion via notion-cli REST helper (search, find DB, create report pages).
+version: 2.0.0
 platforms: [linux]
 metadata:
   hermes:
@@ -14,142 +14,85 @@ required_environment_variables:
     help: https://www.notion.so/my-integrations
     required_for: full functionality
   - name: NOTION_REPORTS_PARENT_PAGE_ID
-    prompt: Parent page UUID for Hermes reports
-    help: Share the page with the integration, then copy ID from the URL
-    required_for: full functionality
+    prompt: Parent page UUID for new reports
+    help: Share the page with the integration
+    required_for: creating reports
 ---
 
-# Notion reports
+# Notion (REST CLI only — no MCP)
 
-Post durable reports to Notion as **child pages** under a fixed parent page.
-Prefer Notion MCP tools (`mcp_notion_*`) when available. Fallback: REST API via curl.
+Use the host CLI **`notion-cli`** (installed at `~/.hermes/bin/notion-cli`).  
+Do **not** use Notion MCP, browser, or web_extract on Notion URLs.
 
-## Config (from environment)
+## Binary
 
-| Variable | Purpose |
-|----------|---------|
-| `NOTION_API_KEY` | Internal integration token (`ntn_…`) |
-| `NOTION_TOKEN` | Alias of the same token (MCP server) |
-| `NOTION_REPORTS_PARENT_PAGE_ID` | Parent page UUID (with or without dashes) |
-| `NOTION_API_VERSION` | Optional; default `2022-06-28` for REST fallback |
+```bash
+notion-cli me
+```
 
-Also check `~/.hermes/notion/config.env` if present (non-secret parent id may be duplicated there).
+Should be on `PATH` (host: `/usr/local/bin` and `~/.local/bin`; Docker sandbox: `~/.hermes/bin` via mount + `docker_env.PATH`).
+
+Fallback if needed:
+
+```bash
+/root/.hermes/bin/notion-cli me
+# or
+~/.hermes/bin/notion-cli me
+```
+
+Credentials: process env, or `~/.hermes/notion/env` (mounted into Docker), or `~/.hermes/.env` on the host.
+
+## Commands
+
+| Command | Use |
+|---------|-----|
+| `notion-cli me` | Verify token |
+| `notion-cli search "query" [--limit 10] [--filter page\|database]` | Search |
+| `notion-cli find-db "query"` | Find databases by name |
+| `notion-cli get <id>` | Page or database metadata |
+| `notion-cli children <page_id>` | Child pages/databases under a page |
+| `notion-cli create-report --title "…" --body "…" [--parent ID]` | New child page under reports parent |
+
+All commands print **JSON**. On error, exit non-zero and message on stderr.
 
 ## When to use
 
-- User asks to “post to Notion”, “file a report”, “save this research in Notion”
-- End of a multi-step research / freelancing scan / ops summary that should be archived
-- Cron or scheduled digests that should leave a paper trail outside Telegram
+- Search Notion, find a database/page id, summarize shared content  
+- Post a report under `NOTION_REPORTS_PARENT_PAGE_ID`  
+- User mentions Job Hunting, freelancing boards, or “in Notion”
 
-Do **not** use for secrets (API keys, tokens, private credentials).
+## Read procedure (fail-fast)
 
-## Report format
+1. At most **two** CLI calls. Prefer:
+   - `notion-cli search "Job Hunting"`
+   - `notion-cli find-db "Freelance Opportunities"`  
+   or `notion-cli children <job-hunting-page-id>` if you already have the page id.
+2. Return **id**, **title**, **url**, **object** from JSON. Do not invent ids.
+3. If `count` is 0: say the page/DB is probably **not shared** with the integration (Connections) and **stop**. Do not retry in a loop.
+4. Never open `app.notion.com` / `notion.so` with web tools.
 
-**Title:** `YYYY-MM-DD — <short title>` using the host timezone (`TIMEZONE` / Asia/Dubai).
+## Write procedure (reports)
 
-**Body (markdown):**
-
-```markdown
-# <title>
-
-## Summary
-2–5 sentences.
-
-## Findings
-- bullet points with facts and links
-
-## Sources
-- URLs used
-
-## Next actions
-- optional follow-ups
-```
-
-## Procedure (MCP preferred)
-
-1. Confirm env: `NOTION_API_KEY` (or `NOTION_TOKEN`) and `NOTION_REPORTS_PARENT_PAGE_ID`.
-2. Load Notion MCP tools if listed (`mcp_notion_*`). Create a **child page** under the parent page id with the title and markdown body.
-3. Prefer tools that accept markdown content when available.
-4. Return the **public Notion URL** to the user in Telegram.
-
-## Procedure (REST fallback)
-
-If MCP tools are unavailable, use the host terminal (or `execute_code`) with curl.
-Normalize page id (strip dashes if needed for some clients; API accepts UUID with dashes):
+1. Title: `YYYY-MM-DD — <short title>` (host timezone).  
+2. Body: Summary / Findings / Sources / Next actions.  
+3. Write body to a temp file if long, then:
 
 ```bash
-# Load secrets from Hermes env if needed
-set -a; source ~/.hermes/.env 2>/dev/null; set +a
-TOKEN="${NOTION_TOKEN:-$NOTION_API_KEY}"
-PARENT="${NOTION_REPORTS_PARENT_PAGE_ID}"
-VER="${NOTION_API_VERSION:-2022-06-28}"
-TITLE="2026-08-25 — Example report"
-
-# Create child page (title property + paragraph children — keep blocks small)
-python3 - <<'PY'
-import json, os, urllib.request
-token = os.environ["NOTION_TOKEN"] if os.environ.get("NOTION_TOKEN") else os.environ["NOTION_API_KEY"]
-parent = os.environ["NOTION_REPORTS_PARENT_PAGE_ID"].replace("-", "")
-# Notion accepts IDs with or without hyphens; re-hyphenate if 32 hex
-if len(parent) == 32:
-    parent = f"{parent[:8]}-{parent[8:12]}-{parent[12:16]}-{parent[16:20]}-{parent[20:]}"
-title = os.environ.get("REPORT_TITLE", "Hermes report")
-body = os.environ.get("REPORT_BODY", "Empty report.")
-# Split body into paragraph chunks ≤1900 chars
-paras = []
-chunk = []
-n = 0
-for line in body.splitlines():
-    if n + len(line) + 1 > 1800 and chunk:
-        paras.append("\n".join(chunk))
-        chunk, n = [], 0
-    chunk.append(line)
-    n += len(line) + 1
-if chunk:
-    paras.append("\n".join(chunk))
-children = []
-for p in paras[:100]:
-    children.append({
-        "object": "block",
-        "type": "paragraph",
-        "paragraph": {
-            "rich_text": [{"type": "text", "text": {"content": p[:2000]}}]
-        },
-    })
-payload = {
-    "parent": {"page_id": parent},
-    "properties": {
-        "title": {"title": [{"type": "text", "text": {"content": title[:2000]}}]}
-    },
-    "children": children,
-}
-req = urllib.request.Request(
-    "https://api.notion.com/v1/pages",
-    data=json.dumps(payload).encode(),
-    headers={
-        "Authorization": f"Bearer {token}",
-        "Notion-Version": os.environ.get("NOTION_API_VERSION", "2022-06-28"),
-        "Content-Type": "application/json",
-    },
-    method="POST",
-)
-with urllib.request.urlopen(req, timeout=60) as resp:
-    data = json.load(resp)
-print(data.get("url") or data.get("id"))
-PY
+notion-cli create-report --title "2026-08-25 — Weekly" --body-file /tmp/report.md
 ```
 
-Set `REPORT_TITLE` and `REPORT_BODY` in the environment before running, or embed them in a one-shot python script written to `/tmp`.
+4. Reply with the JSON `url`.
 
 ## Pitfalls
 
-- **object_not_found / 404:** Parent page is not shared with the integration (Connections → connect integration).
-- **unauthorized:** Wrong/expired token; regenerate internal integration secret.
-- **MCP tools missing:** Run `./scripts/deploy.sh --notion` and restart gateway; ensure Node/`npx` on VPS.
-- **Huge reports:** Split into multiple pages or trim sources; Notion block limits apply.
-- Never paste `NOTION_API_KEY` into chat or into the Notion page body.
+- Integration only sees **connected** pages — share each hub (e.g. Job Hunting) via ⋯ → Connections.  
+- IDs may be with or without dashes; CLI normalizes.  
+- Do not paste tokens into chat or into Notion pages.  
+- If `notion-cli` is missing: tell user to run `make setup-notion` on the Mac control plane.
 
 ## Verification
 
-- After posting, open the returned URL in a browser.
-- Parent page “Hermes Reports” shows the new child in Notion sidebar.
+```bash
+notion-cli me
+notion-cli search "test" --limit 3
+```

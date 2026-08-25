@@ -26,10 +26,19 @@ terminal:
   docker_shm_size: 64m
   docker_forward_env:
     - GITHUB_TOKEN
+    - NOTION_API_KEY
+    - NOTION_TOKEN
+    - NOTION_REPORTS_PARENT_PAGE_ID
+  # Put ~/.hermes/bin first so bare `notion-cli` works in the sandbox
+  docker_env:
+    PATH: "/root/.hermes/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin"
   docker_volumes:
     - "/root/.hermes/cache/documents:/output"
     - "/root/.hermes/memories:/root/.hermes/memories:ro"
     - "/root/.hermes/CV.md:/root/.hermes/CV.md:ro"
+    - "/root/.hermes/bin:/root/.hermes/bin:ro"
+    - "/root/.hermes/bin/notion-cli:/usr/local/bin/notion-cli:ro"
+    - "/root/.hermes/notion:/root/.hermes/notion:ro"
     - "/root/.agent-reach:/root/.agent-reach"
 
 display:

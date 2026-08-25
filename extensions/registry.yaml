@@ -27,8 +27,8 @@ extensions:
     notes: "Zero-config channels in custom Docker terminal image + Hermes skill"
 
   notion:
-    type: mcp+skill
+    type: cli+skill
     default: false  # only when BOTH NOTION_API_KEY + NOTION_REPORTS_PARENT_PAGE_ID are set
     flag: --notion
     remote: scripts/remote/notion-up.sh
-    notes: "Notion MCP + notion-reports skill; gated by both env vars"
+    notes: "Notion REST CLI + skill (no MCP); gated by both env vars"
