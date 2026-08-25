@@ -7,7 +7,7 @@
 
 model:
   provider: openrouter
-  default: xiaomi/mimo-v2.5
+  default: deepseek/deepseek-v4-flash-0731
 
 terminal:
   backend: docker
