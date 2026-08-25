@@ -28,8 +28,7 @@ extensions:
 
   notion:
     type: mcp+skill
-    default: false  # when NOTION_API_KEY is set on full deploy
-    skip_env: SKIP_NOTION
+    default: false  # only when BOTH NOTION_API_KEY + NOTION_REPORTS_PARENT_PAGE_ID are set
     flag: --notion
     remote: scripts/remote/notion-up.sh
-    notes: "Notion MCP + notion-reports skill (child pages under parent)"
+    notes: "Notion MCP + notion-reports skill; gated by both env vars"

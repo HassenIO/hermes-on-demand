@@ -28,7 +28,7 @@ Usage: ./scripts/deploy.sh [--config-only|--health|--firecrawl|--artifacts|--upd
   --firecrawl    Deploy/start self-hosted Firecrawl only
   --mnemosyne    Install/refresh Mnemosyne side-venv + Hermes wrapper plugin
   --agent-reach  Build terminal image + install Agent-Reach skill (zero-config web CLIs)
-  --notion       Notion MCP + notion-reports skill (requires NOTION_API_KEY + parent page id)
+  --notion       Notion MCP + skill (no-op unless BOTH NOTION_API_KEY and NOTION_REPORTS_PARENT_PAGE_ID are set)
   --update       hermes update + Docker patch + Mnemosyne + Agent-Reach + Notion refresh
 EOF
       exit 0
@@ -103,13 +103,13 @@ trap 'rm -f "$RUNTIME_ENV"' EXIT
   # VPS system timezone (IANA). Applied on every deploy via set-timezone.sh
   echo "TIMEZONE=${TIMEZONE:-Asia/Dubai}"
   echo "TZ=${TIMEZONE:-Asia/Dubai}"
-  # Notion reports (optional — ./scripts/deploy.sh --notion)
-  if [[ -n "${NOTION_API_KEY:-}" ]]; then
+  # Notion: only push when BOTH key and parent page id are set (never half-configure)
+  if [[ -n "${NOTION_API_KEY:-}" && -n "${NOTION_REPORTS_PARENT_PAGE_ID:-}" ]]; then
     echo "NOTION_API_KEY=${NOTION_API_KEY}"
     echo "NOTION_TOKEN=${NOTION_TOKEN:-$NOTION_API_KEY}"
+    echo "NOTION_REPORTS_PARENT_PAGE_ID=${NOTION_REPORTS_PARENT_PAGE_ID}"
+    [[ -n "${NOTION_API_VERSION:-}" ]] && echo "NOTION_API_VERSION=${NOTION_API_VERSION}"
   fi
-  [[ -n "${NOTION_REPORTS_PARENT_PAGE_ID:-}" ]] && echo "NOTION_REPORTS_PARENT_PAGE_ID=${NOTION_REPORTS_PARENT_PAGE_ID}"
-  [[ -n "${NOTION_API_VERSION:-}" ]] && echo "NOTION_API_VERSION=${NOTION_API_VERSION}"
 } >"$RUNTIME_ENV"
 chmod 600 "$RUNTIME_ENV"
 
@@ -193,9 +193,15 @@ if [[ "$MODE" == "agent-reach" ]]; then
 fi
 
 if [[ "$MODE" == "notion" ]]; then
+  if [[ -z "${NOTION_API_KEY:-}" || -z "${NOTION_REPORTS_PARENT_PAGE_ID:-}" ]]; then
+    log "Skipping Notion — both required in Mac .env (neither alone is enough):"
+    log "  NOTION_API_KEY=ntn_..."
+    log "  NOTION_REPORTS_PARENT_PAGE_ID=<parent-page-uuid>"
+    log "Docs: docs/tools/notion.md — no VPS changes made."
+    exit 0
+  fi
   log "Installing Notion MCP + notion-reports skill"
-  # Ensure runtime env on VPS includes Notion keys (already in remote.env)
-  ssh_cmd "install -m 600 '$REMOTE_DIR/remote.env' \"\${HERMES_HOME:-\$HOME/.hermes}/.env\" 2>/dev/null || true; bash '$REMOTE_DIR/scripts/remote/notion-up.sh'"
+  ssh_cmd "REMOTE_ENV='$REMOTE_DIR/remote.env' bash '$REMOTE_DIR/scripts/remote/notion-up.sh'"
   log "Notion done. /new in Telegram, then ask to post a test report."
   exit 0
 fi
@@ -235,8 +241,8 @@ fi
 hermes gateway restart 2>/dev/null || hermes gateway start
 hermes gateway status || true
 EOF
-  # Re-apply Notion MCP block if keys present (config.yaml.example has no mcp_servers)
-  if [[ "${SKIP_NOTION:-}" != "1" && -n "${NOTION_API_KEY:-}" && -n "${NOTION_REPORTS_PARENT_PAGE_ID:-}" ]]; then
+  # Re-apply Notion MCP block if both keys present (config.yaml.example has no mcp_servers)
+  if [[ -n "${NOTION_API_KEY:-}" && -n "${NOTION_REPORTS_PARENT_PAGE_ID:-}" ]]; then
     log "Re-applying Notion after config push"
     ssh_cmd "bash '$REMOTE_DIR/scripts/remote/notion-up.sh'" || warn "Notion re-apply failed"
   fi
@@ -275,15 +281,13 @@ else
   log "Skipping Agent-Reach (SKIP_AGENT_REACH=1)"
 fi
 
-# Notion when keys present. Opt out: SKIP_NOTION=1
-if [[ "${SKIP_NOTION:-}" != "1" && -n "${NOTION_API_KEY:-}" && -n "${NOTION_REPORTS_PARENT_PAGE_ID:-}" ]]; then
-  log "Installing Notion (SKIP_NOTION=1 to skip)"
+# Notion only when both env vars are set (omit either → skip)
+if [[ -n "${NOTION_API_KEY:-}" && -n "${NOTION_REPORTS_PARENT_PAGE_ID:-}" ]]; then
+  log "Installing Notion (both NOTION_API_KEY and NOTION_REPORTS_PARENT_PAGE_ID set)"
   ssh_cmd "bash '$REMOTE_DIR/scripts/remote/notion-up.sh'" \
     || warn "Notion setup failed — re-run ./scripts/deploy.sh --notion"
-elif [[ "${SKIP_NOTION:-}" == "1" ]]; then
-  log "Skipping Notion (SKIP_NOTION=1)"
 else
-  log "Skipping Notion (set NOTION_API_KEY + NOTION_REPORTS_PARENT_PAGE_ID to enable)"
+  log "Skipping Notion (set both NOTION_API_KEY and NOTION_REPORTS_PARENT_PAGE_ID to enable)"
 fi
 
 ssh_cmd "bash '$REMOTE_DIR/scripts/remote/healthcheck.sh'"

@@ -29,8 +29,8 @@ if [[ -f "$ENV_FILE" ]]; then
   set +a
 fi
 
-# Also accept payload remote.env merge
-PAYLOAD_ENV="$(cd "$SCRIPT_DIR/../.." && pwd)/remote.env"
+# Merge NOTION_* from payload remote.env (preferred source from Mac deploy)
+PAYLOAD_ENV="${REMOTE_ENV:-$(cd "$SCRIPT_DIR/../.." && pwd)/remote.env}"
 if [[ -f "$PAYLOAD_ENV" ]]; then
   while IFS= read -r line || [[ -n "$line" ]]; do
     [[ "$line" == NOTION_*=* ]] || continue
@@ -44,11 +44,13 @@ fi
 KEY="${NOTION_API_KEY:-${NOTION_TOKEN:-}}"
 PARENT="${NOTION_REPORTS_PARENT_PAGE_ID:-}"
 
-if [[ -z "$KEY" ]]; then
-  die "NOTION_API_KEY (or NOTION_TOKEN) missing in ~/.hermes/.env"
-fi
-if [[ -z "$PARENT" ]]; then
-  die "NOTION_REPORTS_PARENT_PAGE_ID missing in ~/.hermes/.env"
+# Flexible no-op: never half-configure Notion without both vars
+if [[ -z "$KEY" || -z "$PARENT" ]]; then
+  log "Skipping Notion setup — both required (missing one or both):"
+  if [[ -n "$KEY" ]]; then log "  NOTION_API_KEY: set"; else log "  NOTION_API_KEY: unset"; fi
+  if [[ -n "$PARENT" ]]; then log "  NOTION_REPORTS_PARENT_PAGE_ID: set"; else log "  NOTION_REPORTS_PARENT_PAGE_ID: unset"; fi
+  log "No MCP/skill/config changes written."
+  exit 0
 fi
 
 # Persist aliases into Hermes .env

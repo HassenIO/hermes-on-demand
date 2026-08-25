@@ -39,9 +39,9 @@ References:
 | `TELEGRAM_GROUP_ALLOWED_CHATS` | no | Group chat id allowlist |
 | `GATEWAY_ALLOW_ALL_USERS` | no | Keep `false` / unset on VPS |
 | `FIRECRAWL_API_KEY` | no | Web scraping if enabled |
-| `NOTION_API_KEY` | no | Notion internal integration (`ntn_…`); enables `--notion` |
-| `NOTION_REPORTS_PARENT_PAGE_ID` | no | Parent page UUID for Hermes report child pages |
-| `NOTION_TOKEN` | no | Alias of `NOTION_API_KEY` for MCP (set automatically) |
+| `NOTION_API_KEY` | no* | Notion internal integration (`ntn_…`). *Both Notion vars required together* |
+| `NOTION_REPORTS_PARENT_PAGE_ID` | no* | Parent page UUID. Without this, Notion is **not** configured even if the key is set |
+| `NOTION_TOKEN` | no | Alias of `NOTION_API_KEY` for MCP (set automatically when both are present) |
 | `VOICE_TOOLS_OPENAI_KEY` | no | Cloud STT/TTS |
 | `GROQ_API_KEY` | no | Groq Whisper STT |
 | `GITHUB_TOKEN` | no | Skills hub rate limits |

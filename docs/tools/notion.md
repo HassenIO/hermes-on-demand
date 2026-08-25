@@ -55,33 +55,45 @@ Either form works in `NOTION_REPORTS_PARENT_PAGE_ID`.
 
 ## Mac `.env`
 
+**Both variables are required.** If either is missing, every deploy path **skips Notion entirely** (no MCP block, no skill, no partial secrets pushed). There is no separate skip flag — omit the vars to disable.
+
 ```bash
+# Both required to enable Notion — one alone does nothing
 NOTION_API_KEY=ntn_your_secret_here
 NOTION_REPORTS_PARENT_PAGE_ID=a1b2c3d4-e5f6-7890-a1b2-c3d4e5f67890
+
 # optional
 # NOTION_API_VERSION=2022-06-28
-# SKIP_NOTION=1
 ```
 
 Never commit real tokens. `.env` is gitignored.
 
+### When Notion is configured vs skipped
+
+| Situation | Behavior |
+|-----------|----------|
+| Both `NOTION_API_KEY` and `NOTION_REPORTS_PARENT_PAGE_ID` set | Deploy installs MCP + skill |
+| Only one of the two set | **Skip** (log + exit 0); nothing written on VPS |
+| Neither set | **Skip** (normal default) |
+| `./scripts/deploy.sh --notion` without both | **Skip** with instructions (no error) |
+| `hermes update` / `--update` | Refresh only if both still present on VPS |
+
+To disable Notion later: remove both vars from Mac `.env` (and optionally from VPS `~/.hermes/.env`) and stop calling `--notion`.
+
 ## Deploy
 
 ```bash
-# Install / refresh Notion MCP + skill on VPS
+# No-op if keys missing; installs when both are in Mac .env
 ./scripts/deploy.sh --notion
 
-# Full bootstrap installs Notion only when NOTION_API_KEY is set
+# Full bootstrap: same rule (only if both vars set)
 ./scripts/deploy.sh
-
-# Opt out on full deploy even if key is present
-SKIP_NOTION=1 ./scripts/deploy.sh
 ```
 
 ### What `notion-up.sh` does
 
-1. Requires `NOTION_API_KEY` + `NOTION_REPORTS_PARENT_PAGE_ID` on the VPS  
-2. Writes aliases `NOTION_TOKEN` (MCP) into `~/.hermes/.env`  
+1. **Exits 0 without changes** unless both token and parent page id are available  
+2. Writes `NOTION_API_KEY`, `NOTION_TOKEN`, `NOTION_REPORTS_PARENT_PAGE_ID` into `~/.hermes/.env`  
 3. Ensures `npx` / Node are available  
 4. Installs skill → `~/.hermes/skills/notion-reports/SKILL.md`  
 5. Merges `mcp_servers.notion` into `~/.hermes/config.yaml`  

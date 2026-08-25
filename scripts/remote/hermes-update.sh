@@ -62,12 +62,15 @@ if docker image inspect "${AGENT_REACH_IMAGE:-hermes-terminal:agent-reach}" >/de
   fi
 fi
 
-# Refresh Notion MCP + skill if previously configured
-if [[ -f "$HERMES_HOME/skills/notion-reports/SKILL.md" ]] \
-  || grep -qE '^\s+notion:' "$HERMES_HOME/config.yaml" 2>/dev/null; then
-  if [[ -f "$SCRIPT_DIR/notion-up.sh" ]]; then
+# Refresh Notion only if both credentials still present on VPS
+if [[ -f "$SCRIPT_DIR/notion-up.sh" && -f "$HERMES_HOME/.env" ]]; then
+  _nk="$(grep -E '^NOTION_API_KEY=.' "$HERMES_HOME/.env" 2>/dev/null | head -1 || true)"
+  _np="$(grep -E '^NOTION_REPORTS_PARENT_PAGE_ID=.' "$HERMES_HOME/.env" 2>/dev/null | head -1 || true)"
+  if [[ -n "$_nk" && -n "$_np" ]]; then
     log "Refreshing Notion (MCP + skill)"
     bash "$SCRIPT_DIR/notion-up.sh" || warn "Notion refresh failed"
+  else
+    log "Skipping Notion refresh (need both NOTION_API_KEY and NOTION_REPORTS_PARENT_PAGE_ID)"
   fi
 fi
 
