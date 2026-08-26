@@ -13,6 +13,21 @@ References:
 - [Environment variables](https://hermes-agent.nousresearch.com/docs/reference/environment-variables)
 - [AI providers](https://hermes-agent.nousresearch.com/docs/integrations/providers)
 
+## Cron jobs and model changes
+
+When you change `model.default` / `model.provider` in `config/config.yaml.example` and run **`make push-config`** (or full deploy / update), the remote script `scripts/remote/pin-cron-models.sh` pins **every** Hermes cron job to that provider+model via:
+
+```bash
+hermes cron edit <job_id> --provider <provider> --model <model>
+```
+
+This avoids Hermes `drift_skip` (unpinned jobs refuse to run after global model drift). The pin runs after config write on:
+
+- `make push-config` / `./scripts/deploy.sh --config-only`
+- full bootstrap
+- `make update` / hermes-update
+- `make setup-notion` (after config rewrite)
+
 ## Deploy vs runtime env
 
 ### Local-only (Mac `.env`, never written into `~/.hermes/.env`)

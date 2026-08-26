@@ -80,4 +80,9 @@ sleep 3
 hermes gateway status 2>/dev/null || true
 hermes memory status 2>&1 || true
 
+# Keep cron jobs pinned to config.yaml model (avoid drift_skip after model changes)
+if [[ -f "$SCRIPT_DIR/pin-cron-models.sh" ]]; then
+  bash "$SCRIPT_DIR/pin-cron-models.sh" || warn "cron model pin failed"
+fi
+
 log "Update + repair finished"

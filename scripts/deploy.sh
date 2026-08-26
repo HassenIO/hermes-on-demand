@@ -240,11 +240,15 @@ if [[ -L "\$HOME/.local/bin/hermes" ]] || [[ ! -e "\$HOME/.local/bin/hermes" ]];
 fi
 hermes gateway restart 2>/dev/null || hermes gateway start
 hermes gateway status || true
+# Pin all cron jobs to the model just written in config.yaml (avoid drift_skip)
+bash '$REMOTE_DIR/scripts/remote/pin-cron-models.sh' || true
 EOF
-  # Re-apply Notion MCP block if both keys present (config.yaml.example has no mcp_servers)
+  # Re-apply Notion if both keys present (config.yaml.example has no mcp/notion blocks)
   if [[ -n "${NOTION_API_KEY:-}" && -n "${NOTION_REPORTS_PARENT_PAGE_ID:-}" ]]; then
     log "Re-applying Notion after config push"
     ssh_cmd "bash '$REMOTE_DIR/scripts/remote/notion-up.sh'" || warn "Notion re-apply failed"
+    # notion-up may rewrite config.yaml — re-pin cron models
+    ssh_cmd "bash '$REMOTE_DIR/scripts/remote/pin-cron-models.sh'" || warn "cron pin after notion failed"
   fi
   ssh_cmd "bash '$REMOTE_DIR/scripts/remote/healthcheck.sh'"
   log "Config deploy done. Message your Telegram bot (/new to reload profile)."

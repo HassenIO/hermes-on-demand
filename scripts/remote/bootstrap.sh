@@ -109,9 +109,22 @@ if [[ -f "$SCRIPT_DIR/patch-hermes-docker.sh" ]]; then
   bash "$SCRIPT_DIR/patch-hermes-docker.sh"
 fi
 
-# Ensure OpenRouter + model via CLI when available (best-effort; files are source of truth)
-if hermes config set model.provider openrouter >/dev/null 2>&1; then
-  hermes config set model.default xiaomi/mimo-v2.5 >/dev/null 2>&1 || true
+# Align hermes CLI model settings with config.yaml (do not hardcode a model id)
+if command -v hermes >/dev/null 2>&1; then
+  _prov="$(python3 -c "
+import re,sys
+t=open(sys.argv[1]).read()
+m=re.search(r'(?m)^\\s+provider:\\s*(\\S+)', t)
+print(m.group(1).strip().strip('\"').strip(\"'\") if m else 'openrouter')
+" "$HERMES_HOME/config.yaml" 2>/dev/null || echo openrouter)"
+  _mod="$(python3 -c "
+import re,sys
+t=open(sys.argv[1]).read()
+m=re.search(r'(?m)^\\s+default:\\s*(\\S+)', t)
+print(m.group(1).strip().strip('\"').strip(\"'\") if m else '')
+" "$HERMES_HOME/config.yaml" 2>/dev/null || true)"
+  hermes config set model.provider "${_prov:-openrouter}" >/dev/null 2>&1 || true
+  [[ -n "$_mod" ]] && hermes config set model.default "$_mod" >/dev/null 2>&1 || true
   hermes config set terminal.backend docker >/dev/null 2>&1 || true
 fi
 
@@ -151,6 +164,11 @@ hermes gateway restart 2>/dev/null || hermes gateway start 2>/dev/null || {
   nohup hermes gateway >>"$HERMES_HOME/logs/gateway.nohup.log" 2>&1 &
   sleep 2
 }
+
+# Pin cron jobs to config model (no-op if none exist yet)
+if [[ -f "$SCRIPT_DIR/pin-cron-models.sh" ]]; then
+  bash "$SCRIPT_DIR/pin-cron-models.sh" || warn "cron model pin failed"
+fi
 
 log "Bootstrap finished"
 hermes gateway status 2>/dev/null || true

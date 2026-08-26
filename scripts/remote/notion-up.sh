@@ -289,6 +289,11 @@ if [[ -n "${ids//[$'\n\r\t ']/}" ]]; then
   docker rm -f $ids >/dev/null 2>&1 || true
 fi
 
+# notion-up may rewrite config.yaml — re-pin cron to current model
+if [[ -f "$SCRIPT_DIR/pin-cron-models.sh" ]]; then
+  bash "$SCRIPT_DIR/pin-cron-models.sh" || warn "cron model pin failed"
+fi
+
 log "Notion ready (REST CLI only — MCP disabled)"
 log "  cli:    $(command -v notion-cli)"
 log "  skill:  $SKILL_DST/SKILL.md"
