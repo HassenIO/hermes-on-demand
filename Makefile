@@ -8,11 +8,12 @@ SHELL := /bin/bash
 ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 DEPLOY := $(ROOT)/scripts/deploy.sh
 
-.PHONY: help check-env ssh skills-pull \
+.PHONY: help check-env ssh skills-pull skills-push \
 	deploy full push-config push-artifacts health update \
 	setup-firecrawl setup-mnemosyne setup-agent-reach setup-notion
 
 SKILLS_PULL := $(ROOT)/scripts/skills-pull.sh
+SKILLS_PUSH := $(ROOT)/scripts/skills-push.sh
 
 # ── Primary ───────────────────────────────────────────────────────────
 
@@ -27,6 +28,7 @@ help: ## Show this help
 	@echo "  make update            hermes update + repairs"
 	@echo "  make ssh               Interactive SSH to TARGET_HOST"
 	@echo "  make skills-pull       Pull custom VPS skills → ./skills/"
+	@echo "  make skills-push       Push ./skills/ → VPS (custom only)"
 	@echo ""
 	@echo "Setup extensions:"
 	@echo "  make setup-firecrawl     SearXNG + Firecrawl lite"
@@ -55,6 +57,9 @@ ssh: check-env ## Interactive SSH shell on TARGET_HOST (from .env)
 
 skills-pull: check-env ## Pull custom (non-builtin) skills from VPS into ./skills/
 	@bash "$(SKILLS_PULL)"
+
+skills-push: check-env ## Push ./skills/ to VPS ~/.hermes/skills (custom only; prunes extras)
+	@bash "$(SKILLS_PUSH)"
 
 deploy: check-env ## Full remote bootstrap / refresh default stack
 	@$(DEPLOY)
