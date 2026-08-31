@@ -8,12 +8,14 @@ SHELL := /bin/bash
 ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 DEPLOY := $(ROOT)/scripts/deploy.sh
 
-.PHONY: help check-env ssh skills-pull skills-push \
+.PHONY: help check-env ssh skills-pull skills-push cron-pull cron-push \
 	deploy full push-config push-artifacts health update \
 	setup-firecrawl setup-mnemosyne setup-agent-reach setup-notion
 
 SKILLS_PULL := $(ROOT)/scripts/skills-pull.sh
 SKILLS_PUSH := $(ROOT)/scripts/skills-push.sh
+CRON_PULL := $(ROOT)/scripts/cron-pull.sh
+CRON_PUSH := $(ROOT)/scripts/cron-push.sh
 
 # ── Primary ───────────────────────────────────────────────────────────
 
@@ -29,6 +31,8 @@ help: ## Show this help
 	@echo "  make ssh               Interactive SSH to TARGET_HOST"
 	@echo "  make skills-pull       Pull custom VPS skills → ./skills/"
 	@echo "  make skills-push       Push ./skills/ → VPS (custom only)"
+	@echo "  make cron-pull         Pull scheduled jobs → ./cron/jobs.json"
+	@echo "  make cron-push         Push ./cron/jobs.json → VPS"
 	@echo ""
 	@echo "Setup extensions:"
 	@echo "  make setup-firecrawl     SearXNG + Firecrawl lite"
@@ -60,6 +64,12 @@ skills-pull: check-env ## Pull custom (non-builtin) skills from VPS into ./skill
 
 skills-push: check-env ## Push ./skills/ to VPS ~/.hermes/skills (custom only; prunes extras)
 	@bash "$(SKILLS_PUSH)"
+
+cron-pull: check-env ## Pull VPS scheduled cron jobs into ./cron/jobs.json
+	@bash "$(CRON_PULL)"
+
+cron-push: check-env ## Push ./cron/jobs.json to VPS (replace remote job set)
+	@bash "$(CRON_PUSH)"
 
 deploy: check-env ## Full remote bootstrap / refresh default stack
 	@$(DEPLOY)
