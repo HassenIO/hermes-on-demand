@@ -8,7 +8,7 @@ SHELL := /bin/bash
 ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 DEPLOY := $(ROOT)/scripts/deploy.sh
 
-.PHONY: help check-env \
+.PHONY: help check-env ssh \
 	deploy full push-config push-artifacts health update \
 	setup-firecrawl setup-mnemosyne setup-agent-reach setup-notion
 
@@ -23,6 +23,7 @@ help: ## Show this help
 	@echo "  make push-artifacts    Push SOUL/USER/MEMORY/CV only"
 	@echo "  make health            Remote healthcheck"
 	@echo "  make update            hermes update + repairs"
+	@echo "  make ssh               Interactive SSH to TARGET_HOST"
 	@echo ""
 	@echo "Setup extensions:"
 	@echo "  make setup-firecrawl     SearXNG + Firecrawl lite"
@@ -39,6 +40,15 @@ help: ## Show this help
 check-env: ## Verify .env exists (does not print secrets)
 	@test -f "$(ROOT)/.env" || { echo "ERROR: missing .env — cp .env.sample .env"; exit 1; }
 	@echo "OK  $(ROOT)/.env"
+
+ssh: check-env ## Interactive SSH shell on TARGET_HOST (from .env)
+	@set -a && source "$(ROOT)/.env" && set +a && \
+	: "$${TARGET_HOST:?TARGET_HOST missing in .env}" && \
+	: "$${TARGET_USER:?TARGET_USER missing in .env}" && \
+	SSH_PORT="$${SSH_PORT:-22}" && \
+	opts=(-o StrictHostKeyChecking=accept-new -p "$$SSH_PORT") && \
+	if [[ -n "$${SSH_IDENTITY_FILE:-}" ]]; then opts+=(-i "$$SSH_IDENTITY_FILE"); fi && \
+	exec ssh "$${opts[@]}" "$${TARGET_USER}@$${TARGET_HOST}"
 
 deploy: check-env ## Full remote bootstrap / refresh default stack
 	@$(DEPLOY)
