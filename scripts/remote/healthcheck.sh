@@ -104,6 +104,33 @@ if command -v hermes >/dev/null 2>&1; then
   fi
 fi
 
+# Discord (optional — only when both token + allowlist are set)
+discord_token=""
+discord_users=""
+if [[ -f "$HERMES_HOME/.env" ]]; then
+  discord_token="$(grep -E '^DISCORD_BOT_TOKEN=.' "$HERMES_HOME/.env" 2>/dev/null | tail -1 | cut -d= -f2- || true)"
+  discord_users="$(grep -E '^DISCORD_ALLOWED_USERS=.' "$HERMES_HOME/.env" 2>/dev/null | tail -1 | cut -d= -f2- || true)"
+fi
+if [[ -n "$discord_token" && -n "$discord_users" ]]; then
+  log "OK  Discord env present (token + allowlist)"
+  if [[ -f "$HERMES_HOME/logs/gateway.log" ]] && \
+     grep -Eiq 'discord.*(connected|ready|logged in)|✓ discord' "$HERMES_HOME/logs/gateway.log" 2>/dev/null; then
+    # Prefer a recent success line over ancient history
+    if tail -n 200 "$HERMES_HOME/logs/gateway.log" | grep -Eiq 'discord.*(connected|ready|logged in)|✓ discord|discord connect'; then
+      log "OK  Discord seen in recent gateway.log"
+    else
+      warn "Discord env set but no recent connect line in gateway.log (check intents/token)"
+    fi
+  else
+    warn "Discord env set; confirm bot online after gateway restart"
+  fi
+  if grep -Eq '^DISCORD_HOME_CHANNEL=.' "$HERMES_HOME/.env" 2>/dev/null; then
+    log "OK  DISCORD_HOME_CHANNEL set"
+  else
+    warn "DISCORD_HOME_CHANNEL unset (cron home may stay on Telegram)"
+  fi
+fi
+
 # Firecrawl lite (optional but default on full deploy)
 if curl -fsS --max-time 3 "http://127.0.0.1:3002/v0/health/readiness" >/dev/null 2>&1; then
   log "OK  Firecrawl API http://127.0.0.1:3002"

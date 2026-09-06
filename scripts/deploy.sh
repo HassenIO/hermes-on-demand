@@ -87,6 +87,24 @@ trap 'rm -f "$RUNTIME_ENV"' EXIT
   [[ -n "${TELEGRAM_HOME_CHANNEL_NAME:-}" ]] && echo "TELEGRAM_HOME_CHANNEL_NAME=${TELEGRAM_HOME_CHANNEL_NAME}"
   [[ -n "${TELEGRAM_GROUP_ALLOWED_USERS:-}" ]] && echo "TELEGRAM_GROUP_ALLOWED_USERS=${TELEGRAM_GROUP_ALLOWED_USERS}"
   [[ -n "${TELEGRAM_GROUP_ALLOWED_CHATS:-}" ]] && echo "TELEGRAM_GROUP_ALLOWED_CHATS=${TELEGRAM_GROUP_ALLOWED_CHATS}"
+  # Discord gateway (optional — both token + allowlist required to enable)
+  if [[ -n "${DISCORD_BOT_TOKEN:-}" && -n "${DISCORD_ALLOWED_USERS:-}" ]]; then
+    echo "DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}"
+    echo "DISCORD_ALLOWED_USERS=${DISCORD_ALLOWED_USERS}"
+    [[ -n "${DISCORD_HOME_CHANNEL:-}" ]] && echo "DISCORD_HOME_CHANNEL=${DISCORD_HOME_CHANNEL}"
+    [[ -n "${DISCORD_HOME_CHANNEL_NAME:-}" ]] && echo "DISCORD_HOME_CHANNEL_NAME=${DISCORD_HOME_CHANNEL_NAME}"
+    [[ -n "${DISCORD_FREE_RESPONSE_CHANNELS:-}" ]] && echo "DISCORD_FREE_RESPONSE_CHANNELS=${DISCORD_FREE_RESPONSE_CHANNELS}"
+    [[ -n "${DISCORD_ALLOWED_CHANNELS:-}" ]] && echo "DISCORD_ALLOWED_CHANNELS=${DISCORD_ALLOWED_CHANNELS}"
+    [[ -n "${DISCORD_IGNORED_CHANNELS:-}" ]] && echo "DISCORD_IGNORED_CHANNELS=${DISCORD_IGNORED_CHANNELS}"
+    [[ -n "${DISCORD_NO_THREAD_CHANNELS:-}" ]] && echo "DISCORD_NO_THREAD_CHANNELS=${DISCORD_NO_THREAD_CHANNELS}"
+    [[ -n "${DISCORD_REQUIRE_MENTION:-}" ]] && echo "DISCORD_REQUIRE_MENTION=${DISCORD_REQUIRE_MENTION}"
+    [[ -n "${DISCORD_THREAD_REQUIRE_MENTION:-}" ]] && echo "DISCORD_THREAD_REQUIRE_MENTION=${DISCORD_THREAD_REQUIRE_MENTION}"
+    [[ -n "${DISCORD_AUTO_THREAD:-}" ]] && echo "DISCORD_AUTO_THREAD=${DISCORD_AUTO_THREAD}"
+    [[ -n "${DISCORD_IGNORE_NO_MENTION:-}" ]] && echo "DISCORD_IGNORE_NO_MENTION=${DISCORD_IGNORE_NO_MENTION}"
+    [[ -n "${DISCORD_REACTIONS:-}" ]] && echo "DISCORD_REACTIONS=${DISCORD_REACTIONS}"
+    [[ -n "${DISCORD_ALLOW_BOTS:-}" ]] && echo "DISCORD_ALLOW_BOTS=${DISCORD_ALLOW_BOTS}"
+    [[ -n "${DISCORD_ALLOW_ALL_USERS:-}" ]] && echo "DISCORD_ALLOW_ALL_USERS=${DISCORD_ALLOW_ALL_USERS}"
+  fi
   [[ -n "${GATEWAY_ALLOW_ALL_USERS:-}" ]] && echo "GATEWAY_ALLOW_ALL_USERS=${GATEWAY_ALLOW_ALL_USERS}"
   [[ -n "${FIRECRAWL_API_KEY:-}" ]] && echo "FIRECRAWL_API_KEY=${FIRECRAWL_API_KEY}"
   # Self-hosted web stack (./scripts/deploy.sh --firecrawl)
@@ -251,7 +269,7 @@ EOF
     ssh_cmd "bash '$REMOTE_DIR/scripts/remote/pin-cron-models.sh'" || warn "cron pin after notion failed"
   fi
   ssh_cmd "bash '$REMOTE_DIR/scripts/remote/healthcheck.sh'"
-  log "Config deploy done. Message your Telegram bot (/new to reload profile)."
+  log "Config deploy done. Message Telegram and/or Discord (/new to reload profile)."
   exit 0
 fi
 

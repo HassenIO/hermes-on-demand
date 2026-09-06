@@ -52,6 +52,16 @@ This avoids Hermes `drift_skip` (unpinned jobs refuse to run after global model 
 | `TELEGRAM_HOME_CHANNEL_NAME` | no | Display label |
 | `TELEGRAM_GROUP_ALLOWED_USERS` | no | Group sender allowlist |
 | `TELEGRAM_GROUP_ALLOWED_CHATS` | no | Group chat id allowlist |
+| `DISCORD_BOT_TOKEN` | no* | Discord bot token (*both Discord vars required to enable — see [07-discord-gateway](07-discord-gateway.md)*) |
+| `DISCORD_ALLOWED_USERS` | no* | Numeric Discord user ids allowlist |
+| `DISCORD_HOME_CHANNEL` | no | Discord channel id for cron / proactive home |
+| `DISCORD_HOME_CHANNEL_NAME` | no | Display label |
+| `DISCORD_FREE_RESPONSE_CHANNELS` | no | Channel ids that skip @mention |
+| `DISCORD_ALLOWED_CHANNELS` | no | If set, only these channels (+ DMs) |
+| `DISCORD_IGNORED_CHANNELS` | no | Never respond here |
+| `DISCORD_REQUIRE_MENTION` | no | Default true in server channels |
+| `DISCORD_AUTO_THREAD` | no | Default true |
+| `DISCORD_ALLOW_BOTS` | no | Default `none` |
 | `GATEWAY_ALLOW_ALL_USERS` | no | Keep `false` / unset on VPS |
 | `FIRECRAWL_API_KEY` | no | Web scraping if enabled |
 | `NOTION_API_KEY` | no* | Notion internal integration (`ntn_…`). *Both Notion vars required together* |

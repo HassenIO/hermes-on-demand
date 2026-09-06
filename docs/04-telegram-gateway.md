@@ -83,6 +83,8 @@ In Telegram after the bot works:
 
 Or set `TELEGRAM_HOME_CHANNEL` / `TELEGRAM_HOME_CHANNEL_NAME` in `.env` and redeploy `--config-only`.
 
+**Multi-platform:** the gateway can also run Discord. There is effectively **one** proactive home for cron/notifications. If you move home to Discord, see [07-discord-gateway](07-discord-gateway.md) (manual prep + cutover notes). Telegram chat can stay enabled as a second surface.
+
 ## Useful in-chat commands
 
 | Command | Purpose |

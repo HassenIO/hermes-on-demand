@@ -10,12 +10,13 @@ macOS (this repo)                         Ubuntu VPS
 .env (secrets + TARGET_*)    --SSH-->     TARGET_USER home
 config/config.yaml.example   --rsync-->   ~/.hermes/config.yaml
 scripts/deploy.sh            --runs-->    scripts/remote/bootstrap.sh
-                                          hermes gateway (systemd user)
-                                           Docker terminal sandbox
-                                           Telegram long-poll (outbound)
-                                           OpenRouter → xiaomi/mimo-v2.5
-                                            Firecrawl-compatible API (:3002 localhost)
-                                            Agent-Reach terminal image (yt-dlp, gh, …)
+                                           hermes gateway (systemd user)
+                                            Docker terminal sandbox
+                                            Telegram long-poll (outbound)
+                                            Discord Gateway WS (outbound; optional)
+                                            OpenRouter → xiaomi/mimo-v2.5
+                                             Firecrawl-compatible API (:3002 localhost)
+                                             Agent-Reach terminal image (yt-dlp, gh, …)
 ```
 
 | Layer | Choice |
@@ -23,7 +24,7 @@ scripts/deploy.sh            --runs-->    scripts/remote/bootstrap.sh
 | OS | Ubuntu 22.04 or 24.04 |
 | Install | Official [install.sh](https://hermes-agent.nousresearch.com/docs/getting-started/installation) |
 | Process manager | systemd user service + linger |
-| Messaging | [Telegram gateway](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/telegram) |
+| Messaging | [Telegram](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/telegram) (default) · [Discord](07-discord-gateway.md) (optional, same gateway) |
 | Model | OpenRouter [`xiaomi/mimo-v2.5`](https://openrouter.ai/xiaomi/mimo-v2.5) |
 | Agent shell | Docker backend (isolated from host secrets by default) |
 | Web scrape | Local Firecrawl-compatible API ([docs/tools/firecrawl](tools/firecrawl.md)) |
@@ -42,8 +43,8 @@ scripts/deploy.sh            --runs-->    scripts/remote/bootstrap.sh
 
 1. **Never install Hermes on the Mac** via these scripts. Deploy always targets `TARGET_HOST`.
 2. **Secrets in `.env`**, behaviour in `config.yaml` (Hermes official split).
-3. **Telegram deny-by-default**: only `TELEGRAM_ALLOWED_USERS` may talk to the bot.
-4. **No inbound ports required** for default long-polling Telegram mode.
+3. **Messaging deny-by-default**: only allowlisted users may talk to the bot (`TELEGRAM_ALLOWED_USERS`; same rule for Discord when enabled).
+4. **No inbound ports required** for default Telegram long-polling or Discord Gateway (both outbound from the VPS).
 
 ## Doc map
 
@@ -55,6 +56,7 @@ scripts/deploy.sh            --runs-->    scripts/remote/bootstrap.sh
 | [04-telegram-gateway](04-telegram-gateway.md) | Bot setup and gateway service |
 | [05-operations](05-operations.md) | Update, logs, backup |
 | [06-security](06-security.md) | Hardening checklist |
+| [07-discord-gateway](07-discord-gateway.md) | Discord findings, manual prep, Telegram+Discord |
 | [tools/](tools/README.md) | Optional tool integrations (Firecrawl, …) |
 | [troubleshooting](troubleshooting.md) | Common failures |
 
@@ -64,6 +66,7 @@ scripts/deploy.sh            --runs-->    scripts/remote/bootstrap.sh
 - [Installation](https://hermes-agent.nousresearch.com/docs/getting-started/installation)
 - [Messaging gateway](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/)
 - [Telegram](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/telegram)
+- [Discord](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/discord)
 - [AI providers](https://hermes-agent.nousresearch.com/docs/integrations/providers)
 - [Configuration](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)
 - [Environment variables](https://hermes-agent.nousresearch.com/docs/reference/environment-variables)

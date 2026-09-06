@@ -58,6 +58,16 @@ Optional later:
 - `/sethome` in a chat after the gateway is up (cron / home channel)
 - Group privacy: BotFather → Bot Settings → Group Privacy if you use groups
 
+## 4b. Discord bot (optional, multi-platform)
+
+Discord can run **alongside** Telegram on the same gateway. Complete the **manual** Developer Portal steps, put `DISCORD_*` in `.env`, then `make push-config`.
+
+Full findings, limits, paid-plan answer, and checklist: **[07-discord-gateway](07-discord-gateway.md)**.
+
+Upstream: [Discord setup](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/discord).
+
+Minimum: a **private Discord server**, bot token, bot invited to that server, your Discord user ID, home channel ID. **No Discord Nitro required** for personal/private-server use.
+
 ## 5. Local repo setup (Mac)
 
 ```bash
