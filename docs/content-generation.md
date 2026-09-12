@@ -1,6 +1,6 @@
 # Content generation (long-form)
 
-Skills-first pipeline for newsletters, blog posts, business reports, and ebooks. Spec and research: `docs/tasks/large-content-generation.md`.
+Skills-first pipeline for newsletters, blog posts, business reports, ebooks, tutorials, and courses. Spec and research: `docs/tasks/large-content-generation.md`.
 
 ## Skills
 
@@ -10,7 +10,9 @@ Skills-first pipeline for newsletters, blog posts, business reports, and ebooks.
 | `newsletter` | `skills/content/newsletter/` | Digests / recurring newsletters |
 | `blog-post` | `skills/content/blog-post/` | Single articles |
 | `business-report` | `skills/content/business-report/` | Decision-oriented briefs |
-| `ebook` | `skills/content/ebook/` | Multi-chapter, resumable |
+| `ebook` | `skills/content/ebook/` | Multi-chapter long prose, resumable |
+| `tutorial` | `skills/content/tutorial/` | Single lesson: sections → subsections (Diátaxis + Gagné) |
+| `course` | `skills/content/course/` | Curriculum: chapters → sections → subsections |
 | `ai-transformation-analyst` | `skills/research/ai-transformation-analyst/` | Specialist AI executive briefs (domain template) |
 
 Always load **editorial-os** with a genre skill.
@@ -20,7 +22,17 @@ Always load **editorial-os** with a genre skill.
 /blog-post write a post on why outline-lock beats one-shot LLM drafts
 /business-report short brief: should we adopt X in the next planning cycle?
 /ebook start a short guide on Mnemosyne for personal agents (3 chapters)
+/tutorial teach Docker compose first deploy for backend beginners
+/course build a 6-chapter course on prompt evaluation for ML engineers
 ```
+
+### Tutorials vs courses vs ebooks
+
+| | Tutorial | Course | Ebook |
+|---|---|---|---|
+| Hierarchy | sections → subsections | **chapters** → sections → subsections | chapters (prose) |
+| Goal | Learn by doing one path | Curriculum + outcomes over time | Read/understand long form |
+| Pedagogy | Diátaxis tutorial + Gagné | Outcomes matrix + Merrill + Gagné | Editorial narrative |
 
 Or: “Follow editorial-os and blog-post. Topic: …”
 

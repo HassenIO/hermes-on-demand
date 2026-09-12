@@ -5,7 +5,9 @@
 **Owner:** Hassen + Hermes  
 **Goal:** Make Hermes excellent at high-quality long-form content: newsletters, blog posts, business reports, ebooks, and similar deliverables.
 
-**Shipped in-repo (skills):** `skills/content/editorial-os`, `newsletter`, `blog-post`, `business-report`, `ebook`; Go cron wired; SOUL + `docs/content-generation.md`. Deploy with `make skills-push`, `make push-artifacts`, `make cron-push`.
+**Shipped in-repo (skills):** `skills/content/editorial-os`, `newsletter`, `blog-post`, `business-report`, `ebook`, `tutorial`, `course`; Go cron wired; SOUL + `docs/content-generation.md`. Deploy with `make skills-push`, `make push-artifacts`, `make cron-push`.
+
+**Instructional design sources used for tutorial/course:** [Diátaxis tutorials](https://diataxis.fr/tutorials/), [Gagné nine events](https://www.instructionaldesign.org/theories/conditions-learning/), Merrill first principles (problem-centered instruction), [Google Technical Writing One](https://developers.google.com/tech-writing/one) (audience, scope, curse of knowledge).
 
 ---
 
