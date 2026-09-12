@@ -68,12 +68,18 @@ if [[ -z "${MODEL:-}" || "$MODEL" == "MISSING" ]]; then
   exit 0
 fi
 
-log "Pinning cron jobs to provider=$PROVIDER model=$MODEL"
+# Pin jobs that are unpinned or already on the config default.
+# Skip jobs with an intentional override (e.g. content write model) unless FORCE.
+#   PIN_CRON_FORCE=1 bash scripts/remote/pin-cron-models.sh
+FORCE="${PIN_CRON_FORCE:-0}"
+log "Pinning cron jobs to provider=$PROVIDER model=$MODEL (force=$FORCE; preserve explicit overrides)"
 
-JOB_IDS="$(python3 - "$JOBS_JSON" <<'PY'
+PIN_LINES="$(python3 - "$JOBS_JSON" "$MODEL" "$FORCE" <<'PY'
 from pathlib import Path
 import json, sys
 p = Path(sys.argv[1])
+target = (sys.argv[2] or "").strip()
+force = sys.argv[3].strip() in ("1", "true", "yes")
 if not p.exists():
     raise SystemExit(0)
 data = json.loads(p.read_text())
@@ -83,20 +89,33 @@ if isinstance(jobs, dict):
 if not isinstance(jobs, list):
     raise SystemExit(0)
 for j in jobs:
-    if isinstance(j, dict) and j.get("id"):
-        print(j["id"])
+    if not isinstance(j, dict) or not j.get("id"):
+        continue
+    jid = j["id"]
+    cur = (j.get("model") or "").strip()
+    name = (j.get("name") or jid)[:48]
+    if force or not cur or cur == target:
+        print(f"pin\t{jid}\t{name}")
+    else:
+        print(f"skip\t{jid}\t{name}\t{cur}")
 PY
 )"
 
-if [[ -z "${JOB_IDS//[$'\n\r\t ']/}" ]]; then
+if [[ -z "${PIN_LINES//[$'\n\r\t ']/}" ]]; then
   log "No cron jobs found — nothing to pin"
   exit 0
 fi
 
 pinned=0
+skipped=0
 failed=0
-while IFS= read -r jid; do
-  [[ -n "$jid" ]] || continue
+while IFS=$'\t' read -r action jid name extra; do
+  [[ -n "$action" ]] || continue
+  if [[ "$action" == "skip" ]]; then
+    log "  skip $jid ($name) — keep model=${extra:-?} (override)"
+    skipped=$((skipped + 1))
+    continue
+  fi
   out="$(hermes cron edit "$jid" --provider "$PROVIDER" --model "$MODEL" 2>&1)" && ok=1 || ok=0
   if [[ "$ok" -eq 1 ]]; then
     log "  pinned $jid → $PROVIDER / $MODEL"
@@ -105,7 +124,7 @@ while IFS= read -r jid; do
     warn "  failed to pin $jid: $(echo "$out" | tail -3 | tr '\n' ' ')"
     failed=$((failed + 1))
   fi
-done <<<"$JOB_IDS"
+done <<<"$PIN_LINES"
 
-log "Cron pin complete: $pinned ok, $failed failed (target $PROVIDER / $MODEL)"
+log "Cron pin complete: $pinned pinned, $skipped preserved overrides, $failed failed (target $PROVIDER / $MODEL)"
 exit 0

@@ -15,18 +15,26 @@ References:
 
 ## Cron jobs and model changes
 
-When you change `model.default` / `model.provider` in `config/config.yaml.example` and run **`make push-config`** (or full deploy / update), the remote script `scripts/remote/pin-cron-models.sh` pins **every** Hermes cron job to that provider+model via:
+When you change `model.default` / `model.provider` in `config/config.yaml.example` and run **`make push-config`** (or full deploy / update), the remote script `scripts/remote/pin-cron-models.sh` pins Hermes cron jobs to that provider+model via:
 
 ```bash
 hermes cron edit <job_id> --provider <provider> --model <model>
 ```
 
-This avoids Hermes `drift_skip` (unpinned jobs refuse to run after global model drift). The pin runs after config write on:
+This avoids Hermes `drift_skip` (unpinned jobs refuse to run after global model drift). Jobs that already have an **explicit model different from** `model.default` (e.g. Go newsletter on a strong write model) are **left alone**. To force every job onto the config default:
+
+```bash
+PIN_CRON_FORCE=1 bash scripts/remote/pin-cron-models.sh   # on VPS
+```
+
+The pin runs after config write on:
 
 - `make push-config` / `./scripts/deploy.sh --config-only`
 - full bootstrap
 - `make update` / hermes-update
 - `make setup-notion` (after config rewrite)
+
+After `make push-config`, re-run **`make cron-push`** if you changed `cron/jobs.json` locally and need overrides re-applied (pin no longer wipes them, but push-config does not upload jobs.json).
 
 ## Deploy vs runtime env
 

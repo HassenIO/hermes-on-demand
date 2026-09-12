@@ -121,6 +121,9 @@ SKIP_FIRECRAWL=1 SKIP_MNEMOSYNE=1 SKIP_AGENT_REACH=1 make deploy
 - [Telegram gateway](docs/04-telegram-gateway.md)
 - [Operations](docs/05-operations.md)
 - [Security](docs/06-security.md)
+- [Discord gateway](docs/07-discord-gateway.md)
+- [Skills catalog](docs/08-skills.md) — custom skills + links to `SKILL.md`
+- [Content generation](docs/content-generation.md) — long-form pipeline
 - [Tools](docs/tools/README.md) — Firecrawl/SearXNG, Mnemosyne, Agent-Reach, Notion, memory profile
 - [Troubleshooting](docs/troubleshooting.md)
 
