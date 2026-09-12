@@ -7,6 +7,9 @@
 
 model:
   provider: openrouter
+  # Default chat/cron flash model. Long-form content jobs should pin a stronger
+  # write model on the cron job or via /model — see skills/content/editorial-os
+  # references/model-routing.md (e.g. anthropic/claude-sonnet-4.5).
   default: xiaomi/mimo-v2.5
 
 terminal:
@@ -39,6 +42,8 @@ terminal:
     - "/root/.hermes/bin:/root/.hermes/bin:ro"
     - "/root/.hermes/bin/notion-cli:/usr/local/bin/notion-cli:ro"
     - "/root/.hermes/notion:/root/.hermes/notion:ro"
+    # Long-form content artifacts (newsletters, reports, ebooks) — writable
+    - "/root/.hermes/content:/root/.hermes/content"
     - "/root/.agent-reach:/root/.agent-reach"
 
 display:

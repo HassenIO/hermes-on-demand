@@ -1,9 +1,11 @@
 # Large Content Generation — Research, Recommendations, Hermes Plan
 
-**Status:** Research complete; implementation planned (not started)  
+**Status:** Implementation started on branch `feature/large-content-generation`  
 **Date:** 2026-09-12  
 **Owner:** Hassen + Hermes  
 **Goal:** Make Hermes excellent at high-quality long-form content: newsletters, blog posts, business reports, ebooks, and similar deliverables.
+
+**Shipped in-repo (skills):** `skills/content/editorial-os`, `newsletter`, `blog-post`, `business-report`, `ebook`; Go cron wired; SOUL + `docs/content-generation.md`. Deploy with `make skills-push`, `make push-artifacts`, `make cron-push`.
 
 ---
 
