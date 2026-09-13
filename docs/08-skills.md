@@ -20,11 +20,11 @@ Invoke in chat with `/skill-name` or ask Hermes to load the skill. Long-form wri
 |-------|---------|-------------|----------|
 | `blog-post` | 1.0.0 | Produce a single coherent blog article with locked outline, clear thesis, and editorial-os quality gates. Use for standalone posts, essays, and explainers. | [skills/content/blog-post/SKILL.md](../skills/content/blog-post/SKILL.md) |
 | `business-report` | 1.0.0 | Decision-oriented business briefs and reports with methodology, evidence, options, and sources. Use editorial-os. For AI-transformation executive briefs prefer ai-transformation-analyst. | [skills/content/business-report/SKILL.md](../skills/content/business-report/SKILL.md) |
-| `course` | 1.0.0 | Create multi-chapter courses with chapters → sections → subsections. Curriculum design under editorial-os — outcomes, scaffolding, Gagné/Merrill, assessments, resumable disk state. | [skills/content/course/SKILL.md](../skills/content/course/SKILL.md) |
+| `course` | 1.3.0 | Multi-chapter courses with introduction, conclusion, mind map, web-downloaded images, inline/resource links, fresh research. | [skills/content/course/SKILL.md](../skills/content/course/SKILL.md) |
 | `ebook` | 1.0.0 | Multi-chapter ebook pipeline with disk state, outline lock, sequential chapter drafts, continuity pass, and compile. Uses editorial-os. Resumable across sessions. | [skills/content/ebook/SKILL.md](../skills/content/ebook/SKILL.md) |
 | `editorial-os` | 1.0.0 | Shared quality kernel for long-form content. Load with newsletter, blog-post, business-report, ebook, tutorial, or course. Enforces brief→research→outline→draft→verify→publish, epistemics, model routing, and delivery rules. | [skills/content/editorial-os/SKILL.md](../skills/content/editorial-os/SKILL.md) |
 | `newsletter` | 1.0.0 | Produce high-quality newsletters and recurring digests. Loads editorial-os pipeline. Use for daily/weekly topic newsletters with sourced items and scannable structure. | [skills/content/newsletter/SKILL.md](../skills/content/newsletter/SKILL.md) |
-| `tutorial` | 1.0.0 | Create learning-oriented tutorials with sections and subsections. Diátaxis-style lessons under editorial-os — learn by doing, early wins, one path, minimal explanation, verify before ship. | [skills/content/tutorial/SKILL.md](../skills/content/tutorial/SKILL.md) |
+| `tutorial` | 1.3.0 | Tutorials with sections/subsections, web-downloaded images, inline deep links, Resources used, fresh research. | [skills/content/tutorial/SKILL.md](../skills/content/tutorial/SKILL.md) |
 
 ## Research
 

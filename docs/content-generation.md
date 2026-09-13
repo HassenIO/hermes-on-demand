@@ -11,8 +11,8 @@ Skills-first pipeline for newsletters, blog posts, business reports, ebooks, tut
 | `blog-post` | `skills/content/blog-post/` | Single articles |
 | `business-report` | `skills/content/business-report/` | Decision-oriented briefs |
 | `ebook` | `skills/content/ebook/` | Multi-chapter long prose, resumable |
-| `tutorial` | `skills/content/tutorial/` | Single lesson: sections → subsections (Diátaxis + Gagné) |
-| `course` | `skills/content/course/` | Curriculum: chapters → sections → subsections |
+| `tutorial` | `skills/content/tutorial/` | Single lesson + images, resources, fresh research |
+| `course` | `skills/content/course/` | Intro + chapters + conclusion; mind map; images; resources; fresh research |
 | `ai-transformation-analyst` | `skills/research/ai-transformation-analyst/` | Specialist AI executive briefs (domain template) |
 
 Always load **editorial-os** with a genre skill.
@@ -30,9 +30,17 @@ Always load **editorial-os** with a genre skill.
 
 | | Tutorial | Course | Ebook |
 |---|---|---|---|
-| Hierarchy | sections → subsections | **chapters** → sections → subsections | chapters (prose) |
+| Hierarchy | sections → subsections | **intro + chapters + conclusion**; sections → subsections in chapters | chapters (prose) |
 | Goal | Learn by doing one path | Curriculum + outcomes over time | Read/understand long form |
-| Pedagogy | Diátaxis tutorial + Gagné | Outcomes matrix + Merrill + Gagné | Editorial narrative |
+| Pedagogy | Diátaxis + Gagné | Outcomes matrix + Merrill + Gagné | Editorial narrative |
+| **Visuals** | Destination + per section; prefer **web downloads** into `assets/` | Intro **mind map** + per chapter figures; prefer web downloads | Optional |
+| **Resources** | Inline deep links + end **Resources used** | Same per chapter + conclusion full index | Sources as genre requires |
+| **Freshness** | Live web search; pin versions/models as-of opened pages | Same | Same when technical |
+
+Visual rules: `skills/content/editorial-os/references/instructional-visuals.md`.  
+Freshness: `skills/content/editorial-os/references/freshness.md`.
+
+**Source priority for images:** (1) **Download** from opened docs into `assets/`, (2) **`image_generate`** + save locally, (3) **Mermaid** only if both fail. Mermaid-only fails verify if downloads were possible. Attribute third-party images in `assets/manifest.md`.
 
 Or: “Follow editorial-os and blog-post. Topic: …”
 
