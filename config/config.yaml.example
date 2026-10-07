@@ -7,9 +7,7 @@
 
 model:
   provider: openrouter
-  # Default chat/cron flash model. Long-form content jobs should pin a stronger
-  # write model on the cron job or via /model — see skills/content/editorial-os
-  # references/model-routing.md (e.g. anthropic/claude-sonnet-4.5).
+  # Chat, cron, and long-form content all use this model. Do not pin Sonnet.
   default: xiaomi/mimo-v2.5
 
 terminal:

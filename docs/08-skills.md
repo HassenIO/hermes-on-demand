@@ -9,10 +9,10 @@ Invoke in chat with `/skill-name` or ask Hermes to load the skill. Long-form wri
 | Content (long-form) | 7 |
 | Research | 1 |
 | Tools & web | 1 |
-| Job hunting | 2 |
+| Job hunting | 3 |
 | Productivity & Notion | 10 |
 | Memory | 1 |
-| **Total** | **22** |
+| **Total** | **23** |
 
 ## Content (long-form)
 
@@ -42,6 +42,7 @@ Invoke in chat with `/skill-name` or ask Hermes to load the skill. Long-form wri
 
 | Skill | Version | Description | SKILL.md |
 |-------|---------|-------------|----------|
+| `contract-hunt-dubai` | 1.0.0 | Scan Dubai contract boards for recent AI engineering and MLOps mandates. Returns 5. | [skills/job-hunting/contract-hunt-dubai/SKILL.md](../skills/job-hunting/contract-hunt-dubai/SKILL.md) |
 | `executive-job-search` | 0.1.0 | CTO/VP Eng job search: market research, CV prep, interviews. | [skills/job-hunting/executive-job-search/SKILL.md](../skills/job-hunting/executive-job-search/SKILL.md) |
 | `hiring-agent-sourcing` | 0.1.0 | Source hiring agents from job listings into a Notion DB. | [skills/job-hunting/hiring-agent-sourcing/SKILL.md](../skills/job-hunting/hiring-agent-sourcing/SKILL.md) |
 
@@ -53,7 +54,7 @@ Invoke in chat with `/skill-name` or ask Hermes to load the skill. Long-form wri
 | `cron-job-troubleshooting` | 1.0.0 | Diagnose scheduled cron jobs that error or don't deliver. | [skills/productivity/cron-job-troubleshooting/SKILL.md](../skills/productivity/cron-job-troubleshooting/SKILL.md) |
 | `cron-jobs-report` | 1.0.0 | Write a cron jobs report to the Notion Scheduled Jobs page. | [skills/productivity/cron-jobs-report/SKILL.md](../skills/productivity/cron-jobs-report/SKILL.md) |
 | `hiring-agents-scraper` | 1.0.0 | Find freelancermap hiring agents and save them to Notion. | [skills/productivity/hiring-agents-scraper/SKILL.md](../skills/productivity/hiring-agents-scraper/SKILL.md) |
-| `job-hunting` | 0.1.0 | Search for freelance opportunities matching your profile. | [skills/productivity/job-hunting/SKILL.md](../skills/productivity/job-hunting/SKILL.md) |
+| `job-hunting` | 0.2.0 | Search Dubai freelance opportunities; remote, then hybrid, then on-site. | [skills/productivity/job-hunting/SKILL.md](../skills/productivity/job-hunting/SKILL.md) |
 | `notion-cron-delivery` | 1.0.0 | Author cron jobs that reliably write to Notion pages. | [skills/productivity/notion-cron-delivery/SKILL.md](../skills/productivity/notion-cron-delivery/SKILL.md) |
 | `notion-page-authoring` | 1.0.0 | Write Notion child pages via REST when notion-cli can't. | [skills/productivity/notion-page-authoring/SKILL.md](../skills/productivity/notion-page-authoring/SKILL.md) |
 | `notion-reports` | 2.1.0 | Read/write Notion via notion-cli (search, DB rows, template opp creates, reports). | [skills/notion-reports/SKILL.md](../skills/notion-reports/SKILL.md) |

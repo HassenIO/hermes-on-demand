@@ -56,10 +56,9 @@ Brief → Research → Outline → Draft → Verify → Publish
 
 | Stage | Model |
 |---|---|
-| Research | Default (`xiaomi/mimo-v2.5` or current) OK |
-| Draft + verify | **Stronger** — see `skills/content/editorial-os/references/model-routing.md` |
+| Research, draft, verify | `xiaomi/mimo-v2.5` only. Do not switch to Sonnet. |
 
-Cron content jobs should set `"model"` to the write model (Go newsletter is pinned).
+Cron content jobs pin `"model": "xiaomi/mimo-v2.5"`.
 
 ## Deploy
 

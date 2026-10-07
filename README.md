@@ -1,6 +1,6 @@
 # Hermes (VPS setup)
 
-Infrastructure-as-code for running [Nous Research Hermes Agent](https://hermes-agent.nousresearch.com/) on an Ubuntu VPS, controlled from your Mac.
+Infrastructure-as-code for running [Nous Research Hermes Agent](https://hermes-agent.nousresearch.com/) on an Ubuntu VPS, controlled from your local machine or on a CI/CD pipeline.
 
 | | |
 |--|--|
