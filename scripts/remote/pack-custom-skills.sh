@@ -39,7 +39,7 @@ def should_include(path: Path) -> bool:
     name = path.name
     if name.startswith("."):
         return False
-    if name.endswith(".sha256"):
+    if name == "README.md" or name.endswith(".sha256"):
         return False
     return True
 

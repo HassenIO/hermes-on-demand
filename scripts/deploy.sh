@@ -165,6 +165,7 @@ if command -v rsync >/dev/null 2>&1 && ssh_cmd "command -v rsync >/dev/null 2>&1
     "$ROOT/firecrawl/" "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/firecrawl/"
   if [[ -d "$ROOT/artifacts" ]]; then
     rsync -az -e "$RSYNC_SSH" \
+      --exclude 'README.md' \
       "$ROOT/artifacts/" "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/artifacts/"
   fi
   if [[ -d "$ROOT/extensions" ]]; then
@@ -181,8 +182,11 @@ else
   scp_cmd "$ROOT/firecrawl/lite/"* \
     "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/firecrawl/lite/"
   if [[ -d "$ROOT/artifacts" ]]; then
-    scp_cmd "$ROOT/artifacts/"* \
-      "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/artifacts/" 2>/dev/null || true
+    for f in SOUL.md USER.md MEMORY.md CV.md; do
+      [[ -f "$ROOT/artifacts/$f" ]] || continue
+      scp_cmd "$ROOT/artifacts/$f" \
+        "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/artifacts/"
+    done
   fi
   if [[ -d "$ROOT/extensions" ]]; then
     ssh_cmd "mkdir -p '$REMOTE_DIR/extensions'"

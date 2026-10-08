@@ -15,7 +15,7 @@ DEFAULT_VERSION = "2022-06-28"
 API = "https://api.notion.com/v1"
 TIMEOUT = 30
 
-# Job Hunt IDs come from env / ~/.hermes/notion/config.env — never hardcode them.
+# Notion IDs come from env / ~/.hermes/notion/config.env — never hardcode them.
 
 
 def die(msg: str, code: int = 2) -> None:

@@ -53,7 +53,7 @@ for rel in "${LOCAL_SKILLS[@]}"; do
   esac
 done
 
-tar -czf "$STAGING/skills.tgz" -C "$SRC" .
+tar -czf "$STAGING/skills.tgz" --exclude 'README.md' -C "$SRC" .
 # Ensure archive has content
 [[ -s "$STAGING/skills.tgz" ]] || die "failed to create skills archive"
 

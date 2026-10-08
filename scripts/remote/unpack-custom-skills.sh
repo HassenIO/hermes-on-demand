@@ -86,6 +86,8 @@ try:
         # Drop hermes bookkeeping sidecars if any slipped in
         for side in dest.rglob("*.sha256"):
             side.unlink(missing_ok=True)
+        for readme in dest.rglob("README.md"):
+            readme.unlink(missing_ok=True)
         installed.append(rel.as_posix())
         print(f"installed {rel.as_posix()}", flush=True)
 
