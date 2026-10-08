@@ -8,6 +8,7 @@ firecrawl/.env
 __pycache__/
 *.pyc
 
-# Runtime copies mirrored to S3. Keep on disk; do not commit.
+# Runtime copies. Keep on disk; do not commit.
 /skills/
 /cron/
+/artifacts/
