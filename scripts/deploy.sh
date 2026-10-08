@@ -6,7 +6,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=lib/common.sh
 source "$ROOT/scripts/lib/common.sh"
 
-MODE="full" # full | config-only | health | firecrawl | artifacts | update | mnemosyne | agent-reach | notion
+MODE="full" # full | config-only | health | firecrawl | artifacts | update | mnemosyne | agent-reach | notion | s3-snapshot
 for arg in "$@"; do
   case "$arg" in
     --config-only) MODE="config-only" ;;
@@ -17,9 +17,10 @@ for arg in "$@"; do
     --mnemosyne) MODE="mnemosyne" ;;
     --agent-reach) MODE="agent-reach" ;;
     --notion) MODE="notion" ;;
+    --s3-snapshot) MODE="s3-snapshot" ;;
     -h|--help)
       cat <<'EOF'
-Usage: ./scripts/deploy.sh [--config-only|--health|--firecrawl|--artifacts|--update|--mnemosyne|--agent-reach|--notion]
+Usage: ./scripts/deploy.sh [--config-only|--health|--firecrawl|--artifacts|--update|--mnemosyne|--agent-reach|--notion|--s3-snapshot]
 
   (default)      Full remote bootstrap (Hermes + Firecrawl + Mnemosyne + Agent-Reach + artifacts)
   --config-only  Push secrets + config.yaml + artifacts, re-apply Docker patch, restart
@@ -30,6 +31,7 @@ Usage: ./scripts/deploy.sh [--config-only|--health|--firecrawl|--artifacts|--upd
   --agent-reach  Build terminal image + install Agent-Reach skill (zero-config web CLIs)
   --notion       Notion REST CLI + skill (no-op unless BOTH NOTION_* vars are set)
   --update       hermes update + Docker patch + Mnemosyne + Agent-Reach + Notion refresh
+  --s3-snapshot  Mirror custom skills + cron/jobs.json to S3 (no gateway restart)
 EOF
       exit 0
       ;;
@@ -121,6 +123,12 @@ trap 'rm -f "$RUNTIME_ENV"' EXIT
   # VPS system timezone (IANA). Applied on every deploy via set-timezone.sh
   echo "TIMEZONE=${TIMEZONE:-Asia/Dubai}"
   echo "TZ=${TIMEZONE:-Asia/Dubai}"
+  # S3 snapshot (skills + cron). Not forwarded into the Docker sandbox.
+  [[ -n "${AWS_ACCESS_KEY_ID:-}" ]] && echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}"
+  [[ -n "${AWS_SECRET_ACCESS_KEY:-}" ]] && echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}"
+  [[ -n "${AWS_DEFAULT_REGION:-}" ]] && echo "AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}"
+  [[ -n "${S3_BUCKET:-}" ]] && echo "S3_BUCKET=${S3_BUCKET}"
+  [[ -n "${S3_PREFIX:-}" ]] && echo "S3_PREFIX=${S3_PREFIX}"
   # Notion: only push when BOTH key and parent page id are set (never half-configure)
   if [[ -n "${NOTION_API_KEY:-}" && -n "${NOTION_REPORTS_PARENT_PAGE_ID:-}" ]]; then
     echo "NOTION_API_KEY=${NOTION_API_KEY}"
@@ -188,6 +196,15 @@ ssh_cmd "chmod 600 '$REMOTE_DIR/remote.env' && chmod +x '$REMOTE_DIR/scripts/rem
 log "Applying VPS timezone (TIMEZONE=${TIMEZONE:-Asia/Dubai})"
 ssh_cmd "TIMEZONE='${TIMEZONE:-Asia/Dubai}' bash '$REMOTE_DIR/scripts/remote/set-timezone.sh'" \
   || warn "timezone apply failed — check TIMEZONE= in .env"
+
+if [[ "$MODE" == "s3-snapshot" ]]; then
+  log "Uploading skills + cron snapshot to S3"
+  ssh_cmd "bash '$REMOTE_DIR/scripts/remote/s3-snapshot.sh'"
+  log "Starting S3 file watcher"
+  ssh_cmd "bash '$REMOTE_DIR/scripts/remote/s3-sync-install.sh'"
+  log "S3 snapshot done. Further skills/cron edits on the VPS sync on their own."
+  exit 0
+fi
 
 if [[ "$MODE" == "firecrawl" ]]; then
   log "Deploying self-hosted Firecrawl + wiring Hermes (mode=${FIRECRAWL_MODE:-lite})"
@@ -313,5 +330,17 @@ else
 fi
 
 ssh_cmd "bash '$REMOTE_DIR/scripts/remote/healthcheck.sh'"
+
+if [[ -n "${S3_BUCKET:-}" && -n "${AWS_ACCESS_KEY_ID:-}" && -n "${AWS_SECRET_ACCESS_KEY:-}" && -n "${AWS_DEFAULT_REGION:-}" ]]; then
+  log "Uploading S3 snapshot and starting file watcher"
+  if ssh_cmd "bash '$REMOTE_DIR/scripts/remote/s3-snapshot.sh'"; then
+    ssh_cmd "bash '$REMOTE_DIR/scripts/remote/s3-sync-install.sh'" \
+      || warn "S3 watcher failed to start — re-run ./scripts/deploy.sh --s3-snapshot"
+  else
+    warn "S3 snapshot failed — re-run ./scripts/deploy.sh --s3-snapshot"
+  fi
+elif [[ -n "${S3_BUCKET:-}" ]]; then
+  warn "S3_BUCKET is set but AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, or AWS_DEFAULT_REGION is missing — snapshot skipped"
+fi
 
 log "Deploy complete. Open Telegram, optionally /sethome, then /new and message your bot."

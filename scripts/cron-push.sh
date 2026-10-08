@@ -72,3 +72,10 @@ RESULT="$(ssh_cmd "bash /tmp/install-cron-jobs.sh '$REMOTE_TMP'")"
 printf '%s\n' "$RESULT" | sed 's/^/  /'
 
 log "Done — gateway re-reads jobs.json each tick (no restart required)"
+
+if [[ -n "${S3_BUCKET:-}" ]]; then
+  log "Refreshing S3 snapshot"
+  if ! bash "$ROOT/scripts/deploy.sh" --s3-snapshot; then
+    warn "S3 snapshot failed — cron is on the VPS; re-run ./scripts/deploy.sh --s3-snapshot"
+  fi
+fi

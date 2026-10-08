@@ -69,3 +69,10 @@ printf '%s\n' "$RESULT" | sed 's/^/  /'
 INSTALLED="$(printf '%s\n' "$RESULT" | grep -c '^installed ' || true)"
 PRUNED="$(printf '%s\n' "$RESULT" | grep -c '^pruned ' || true)"
 log "Pushed ${INSTALLED} skill(s), pruned ${PRUNED} remote-only custom package(s)"
+
+if [[ -n "${S3_BUCKET:-}" ]]; then
+  log "Refreshing S3 snapshot"
+  if ! bash "$ROOT/scripts/deploy.sh" --s3-snapshot; then
+    warn "S3 snapshot failed — skills are on the VPS; re-run ./scripts/deploy.sh --s3-snapshot"
+  fi
+fi

@@ -41,6 +41,7 @@ Run from the repo root. All targets require a filled `.env`.
 | **`make push-artifacts`** | Push SOUL / USER / MEMORY / CV only |
 | **`make health`** | Remote healthcheck |
 | **`make update`** | `hermes update` + Docker patch + extension refresh |
+| **`make s3-snapshot`** | Mirror VPS custom skills + cron to S3 |
 
 ```bash
 make deploy           # after cloning or big stack changes
@@ -102,6 +103,16 @@ Equivalent raw entrypoint (same flags): `./scripts/deploy.sh [--config-only|…]
 2. Set **both** `NOTION_API_KEY` and `NOTION_REPORTS_PARENT_PAGE_ID` in `.env`
 3. `make setup-notion` (or `make deploy`)
 
+**S3 snapshot (custom skills + cron)**
+
+Mirrors those paths to S3, then keeps them in sync when they change on the VPS. Not `rsync`. First run installs `awscli` and `inotify-tools` and starts `hermes-s3-sync.service`. SQLite, sessions, and secrets are not uploaded.
+
+1. Create a private S3 bucket (block public access). IAM needs `s3:ListBucket` on the bucket and `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject` on `<S3_PREFIX>/*`.
+2. In `.env` set `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`, `S3_BUCKET`. Optional `S3_PREFIX` (default `hermes/snapshot`).
+3. `make s3-snapshot` (or `make deploy`)
+
+Objects land at `s3://$S3_BUCKET/$S3_PREFIX/` (`skills/`, `cron/jobs.json`, `manifest.json`). After that, edits under `~/.hermes/skills` or `~/.hermes/cron/jobs.json` upload on their own. Details: [docs/09-s3-snapshots.md](docs/09-s3-snapshots.md).
+
 **Skip optional pieces on full deploy**
 
 ```bash
@@ -123,6 +134,7 @@ SKIP_FIRECRAWL=1 SKIP_MNEMOSYNE=1 SKIP_AGENT_REACH=1 make deploy
 - [Security](docs/06-security.md)
 - [Discord gateway](docs/07-discord-gateway.md)
 - [Skills catalog](docs/08-skills.md) — custom skills + links to `SKILL.md`
+- [S3 snapshots](docs/09-s3-snapshots.md) — skills + cron mirror
 - [Content generation](docs/content-generation.md) — long-form pipeline
 - [Tools](docs/tools/README.md) — Firecrawl/SearXNG, Mnemosyne, Agent-Reach, Notion, memory profile
 - [Troubleshooting](docs/troubleshooting.md)

@@ -9,7 +9,7 @@ ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 DEPLOY := $(ROOT)/scripts/deploy.sh
 
 .PHONY: help check-env ssh skills-pull skills-push cron-pull cron-push \
-	deploy full push-config push-artifacts health update \
+	deploy full push-config push-artifacts health update s3-snapshot \
 	setup-firecrawl setup-mnemosyne setup-agent-reach setup-notion
 
 SKILLS_PULL := $(ROOT)/scripts/skills-pull.sh
@@ -33,6 +33,7 @@ help: ## Show this help
 	@echo "  make skills-push       Push ./skills/ → VPS (custom only)"
 	@echo "  make cron-pull         Pull scheduled jobs → ./cron/jobs.json"
 	@echo "  make cron-push         Push ./cron/jobs.json → VPS"
+	@echo "  make s3-snapshot       Mirror VPS skills + cron → S3 and start watcher"
 	@echo ""
 	@echo "Setup extensions:"
 	@echo "  make setup-firecrawl     SearXNG + Firecrawl lite"
@@ -70,6 +71,9 @@ cron-pull: check-env ## Pull VPS scheduled cron jobs into ./cron/jobs.json
 
 cron-push: check-env ## Push ./cron/jobs.json to VPS (replace remote job set)
 	@bash "$(CRON_PUSH)"
+
+s3-snapshot: check-env ## Mirror VPS skills + cron to S3 and start the file watcher
+	@$(DEPLOY) --s3-snapshot
 
 deploy: check-env ## Full remote bootstrap / refresh default stack
 	@$(DEPLOY)

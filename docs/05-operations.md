@@ -61,6 +61,10 @@ hermes gateway stop
 hermes gateway start
 ```
 
+## S3 snapshot (skills + cron)
+
+See [09-s3-snapshots](09-s3-snapshots.md). `make s3-snapshot` uploads custom skills and `jobs.json`, then starts a watcher so later VPS edits sync on their own. SQLite and secrets are not included.
+
 ## Backup / move VPS
 
 Upstream supports export/import:
