@@ -7,3 +7,7 @@ firecrawl/.env
 .DS_Store
 __pycache__/
 *.pyc
+
+# Runtime copies mirrored to S3. Keep on disk; do not commit.
+/skills/
+/cron/
