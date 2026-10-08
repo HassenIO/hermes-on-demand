@@ -1,12 +1,12 @@
 # Overview
 
-This repository is **infrastructure-as-code** for running [Nous Research Hermes Agent](https://hermes-agent.nousresearch.com/) on a remote Ubuntu VPS. Your Mac is the **control plane** only: secrets, config templates, and deploy scripts. Hermes itself is installed and run **only on the VPS**.
+This repository is **infrastructure-as-code** for running [Nous Research Hermes Agent](https://hermes-agent.nousresearch.com/) on a remote Ubuntu VPS. The local machine is the **control plane** only: secrets, config templates, and deploy scripts. Hermes itself is installed and run **only on the VPS**.
 
 ## Architecture
 
 ```
-macOS (this repo)                         Ubuntu VPS
-─────────────────                         ──────────
+local machine (this repo)                 Ubuntu VPS
+─────────────────────────                 ──────────
 .env (secrets + TARGET_*)    --SSH-->     TARGET_USER home
 config/config.yaml.example   --rsync-->   ~/.hermes/config.yaml
 scripts/deploy.sh            --runs-->    scripts/remote/bootstrap.sh
@@ -33,15 +33,15 @@ scripts/deploy.sh            --runs-->    scripts/remote/bootstrap.sh
 
 | Path | Machine | Purpose |
 |------|---------|---------|
-| `.env` | Mac only (gitignored) | Deploy targets + all secrets |
+| `.env` | Local machine only (gitignored) | Deploy targets + all secrets |
 | `~/.hermes/.env` | VPS | Hermes runtime secrets only (no `TARGET_*`) |
 | `~/.hermes/config.yaml` | VPS | Model, terminal, non-secret settings |
 | `~/.hermes/hermes-agent/` | VPS | Upstream install (managed by Hermes) |
-| This git repo | Mac (+ optional copy under `REMOTE_DIR` on VPS) | Source of truth for *your* setup |
+| This git repo | Local machine (+ optional copy under `REMOTE_DIR` on VPS) | Source of truth for *your* setup |
 
 ## Design rules
 
-1. **Never install Hermes on the Mac** via these scripts. Deploy always targets `TARGET_HOST`.
+1. **Never install Hermes on the local machine** via these scripts. Deploy always targets `TARGET_HOST`.
 2. **Secrets in `.env`**, behaviour in `config.yaml` (Hermes official split).
 3. **Messaging deny-by-default**: only allowlisted users may talk to the bot (`TELEGRAM_ALLOWED_USERS`; same rule for Discord when enabled).
 4. **No inbound ports required** for default Telegram long-polling or Discord Gateway (both outbound from the VPS).

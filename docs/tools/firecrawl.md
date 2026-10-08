@@ -28,7 +28,7 @@ Official: [Web Search & Extract](https://hermes-agent.nousresearch.com/docs/user
 On small VPS / datacenter IPs, DuckDuckGo/Bing/Brave HTML often fail or return junk (502 / captcha / ads).  
 **Self-hosted SearXNG** aggregates engines from your own container and is what Hermes documents for free reliable search.
 
-## Deploy (from Mac)
+## Deploy (from the local machine)
 
 ```bash
 ./scripts/deploy.sh --firecrawl
@@ -74,7 +74,7 @@ Not enabled on this VPS by default. Prefer `web_extract` + Agent-Reach for page 
 ## Cloud alternative
 
 ```bash
-# Mac .env — managed Firecrawl instead of self-host extract
+# Local .env — managed Firecrawl instead of self-host extract
 FIRECRAWL_API_KEY=fc-...
 # keep or drop SEARXNG_URL depending on whether you still want local search
 ```

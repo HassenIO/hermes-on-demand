@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Push local ./skills/ custom packages to VPS ~/.hermes/skills/
-# Mac control plane only — never installs Hermes locally.
+# Local control plane only — never installs Hermes locally.
 # Does not touch Hermes builtin skills. Prunes remote custom skills
 # missing from ./skills/ so push mirrors pull.
 set -euo pipefail

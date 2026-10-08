@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Pull custom (non-builtin) skills from the VPS into ./skills/
-# Mac control plane only — never installs Hermes locally.
+# Local control plane only — never installs Hermes locally.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

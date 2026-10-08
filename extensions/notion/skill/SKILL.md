@@ -97,7 +97,7 @@ notion-cli create-report --title "2026-08-25 — Weekly" --body-file /tmp/report
 
 - Share every hub (Job Hunting, DBs) with the integration.  
 - Prefer `notion-cli` over ad-hoc curl/python helpers.  
-- Do not edit bind-mounted `~/.hermes/bin` from inside Docker (read-only); change the Mac repo and `make setup-notion`.  
+- Do not edit bind-mounted `~/.hermes/bin` from inside Docker (read-only); change the local repo and `make setup-notion`.  
 - Never paste tokens into chat or Notion pages.
 
 ## Verification

@@ -40,7 +40,7 @@ This document is the master reference for findings, recommendations, and how tha
 
 ### 2.1 What this repo is
 
-Infrastructure-as-code / control plane for [Nous Research Hermes Agent](https://hermes-agent.nousresearch.com/) on an Ubuntu VPS. The Mac deploys config, secrets, skills, and cron over SSH. Content is produced by **agent runs + skills + tools**, not a dedicated CMS.
+Infrastructure-as-code / control plane for [Nous Research Hermes Agent](https://hermes-agent.nousresearch.com/) on an Ubuntu VPS. The local machine deploys config, secrets, skills, and cron over SSH. Content is produced by **agent runs + skills + tools**, not a dedicated CMS.
 
 | Layer | Role |
 |---|---|

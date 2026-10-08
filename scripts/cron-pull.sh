@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Pull Hermes scheduled cron jobs from the VPS into ./cron/
-# Mac control plane only — never installs Hermes locally.
+# Local control plane only — never installs Hermes locally.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

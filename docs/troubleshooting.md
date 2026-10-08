@@ -22,7 +22,7 @@ sudo apt update
 sudo loginctl enable-linger "$USER"
 ```
 
-Then from Mac: `./scripts/deploy.sh` or `--health`.
+Then from the local machine: `./scripts/deploy.sh` or `--health`.
 
 ## `hermes: command not found` on VPS
 
@@ -75,7 +75,7 @@ hermes config get terminal.backend   # docker
 Telegram session IDs contain `:`. Without our patch, Hermes uses them as host paths in `-v` and Docker fails.
 
 ```bash
-# From Mac:
+# From the local machine:
 ./scripts/deploy.sh --health          # re-applies patch if missing
 # Or on VPS:
 bash ~/hermes-setup/scripts/remote/patch-hermes-docker.sh
@@ -110,5 +110,5 @@ Do **not** add custom `ExecStopPost` kill drop-ins. Remove them and reload syste
 1. `hermes doctor`  
 2. Check `~/.hermes/.env` and `config.yaml`  
 3. `hermes gateway status` / restart  
-4. `./scripts/deploy.sh --config-only` from Mac  
+4. `./scripts/deploy.sh --config-only` from the local machine  
 5. Official `hermes setup` only as last resort (interactive)

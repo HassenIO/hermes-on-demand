@@ -1,6 +1,6 @@
-# Deploy (Mac → VPS)
+# Deploy (local machine → VPS)
 
-Primary path: fill `.env` on your Mac, then run **one** full deploy. Hermes is installed **only on the VPS**.
+Primary path: fill `.env` on the local machine, then run **one** full deploy. Hermes is installed **only on the VPS**.
 
 ## Golden path (new VPS)
 
@@ -70,7 +70,7 @@ Format details: [tools/memory-profile.md](tools/memory-profile.md).
 
 Upstream `hermes update` can overwrite `docker.py` and re-break Telegram sandboxes.
 
-**From Mac (preferred):**
+**From the local machine (preferred):**
 
 ```bash
 ./scripts/deploy.sh --update
@@ -99,7 +99,7 @@ Default full deploy starts **lite** (fits ~1.5–2 GB RAM). Details: [tools/fire
 FIRECRAWL_MODE=full ./scripts/deploy.sh --firecrawl  # large hosts only
 ```
 
-## What is never installed on the Mac
+## What is never installed on the local machine
 
 - Hermes Agent binary / `~/.hermes` runtime
 - Gateway systemd units

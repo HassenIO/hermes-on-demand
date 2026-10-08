@@ -1,4 +1,4 @@
-# Hermes VPS control plane — Mac only. Never installs Hermes on this machine.
+# Hermes VPS control plane — local machine only. Never installs Hermes on this machine.
 # Usage: make <target>   |   make help
 
 .DEFAULT_GOAL := help
@@ -20,7 +20,7 @@ CRON_PUSH := $(ROOT)/scripts/cron-push.sh
 # ── Primary ───────────────────────────────────────────────────────────
 
 help: ## Show this help
-	@echo "Hermes VPS deploy (Mac control plane)"
+	@echo "Hermes VPS deploy (local control plane)"
 	@echo ""
 	@echo "Most used:"
 	@echo "  make deploy            Full bootstrap / refresh stack"

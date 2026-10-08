@@ -19,7 +19,7 @@ usermod -aG sudo deploy
 
 Use that user as `TARGET_USER` in `.env`.
 
-## 2. SSH from your Mac
+## 2. SSH from the local machine
 
 - Private key loaded in `ssh-agent` (default path used by deploy scripts).
 - You can log in non-interactively:
@@ -68,7 +68,7 @@ Upstream: [Discord setup](https://hermes-agent.nousresearch.com/docs/user-guide/
 
 Minimum: a **private Discord server**, bot token, bot invited to that server, your Discord user ID, home channel ID. **No Discord Nitro required** for personal/private-server use.
 
-## 5. Local repo setup (Mac)
+## 5. Local repo setup
 
 ```bash
 cd /path/to/Hermes
@@ -87,12 +87,12 @@ Required variables for first deploy:
 | `TELEGRAM_BOT_TOKEN` | `123456:ABC...` |
 | `TELEGRAM_ALLOWED_USERS` | `123456789` |
 
-## 6. Mac tools
+## 6. Local machine tools
 
 Deploy scripts need:
 
 - `bash`, `ssh`, `scp` or `rsync`
-- No Hermes install on the Mac
+- No Hermes install on the local machine
 
 ## Checklist
 

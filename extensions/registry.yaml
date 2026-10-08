@@ -1,4 +1,4 @@
-# Extension registry — Mac control plane source of truth.
+# Extension registry — local control plane source of truth.
 # Remote installers live under extensions/<name>/ and scripts/remote/.
 #
 # Types: service | hermes-plugin | skill+cli | config-only

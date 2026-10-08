@@ -2,7 +2,7 @@
 
 ## Health
 
-From Mac:
+From the local machine:
 
 ```bash
 ./scripts/deploy.sh --health
@@ -29,7 +29,7 @@ tail -f ~/.hermes/logs/errors.log
 
 **Do not run bare `hermes update` alone** — it can overwrite our Docker path sanitize and break Telegram sandboxes.
 
-From Mac (preferred):
+From the local machine (preferred):
 
 ```bash
 ./scripts/deploy.sh --update
@@ -49,7 +49,7 @@ That runs `hermes update`, re-applies the Docker colon-path patch, repairs CLI l
 
 ## Change model or secrets
 
-1. Edit Mac `.env` and/or `config/config.yaml.example`
+1. Edit the local `.env` and/or `config/config.yaml.example`
 2. `./scripts/deploy.sh --config-only`
 3. Message the bot or check `hermes gateway status`
 
@@ -72,7 +72,7 @@ Upstream supports export/import:
 - [FAQ — exporting Hermes](https://hermes-agent.nousresearch.com/docs/reference/faq#exporting-hermes-to-another-machine)
 - Prefer `hermes backup` for a full move; profile export alone omits credentials
 
-Also keep your Mac `.env` and this git repo as the recoverable source of secrets + desired config.
+Also keep the local `.env` and this git repo as the recoverable source of secrets + desired config.
 
 ## Disk / Docker hygiene
 

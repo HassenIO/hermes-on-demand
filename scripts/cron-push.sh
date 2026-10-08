@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Push local ./cron/jobs.json to VPS ~/.hermes/cron/jobs.json
-# Mac control plane only — never installs Hermes locally.
+# Local control plane only — never installs Hermes locally.
 # Replaces remote job set (local is source of truth after cron-pull + edit).
 set -euo pipefail
 

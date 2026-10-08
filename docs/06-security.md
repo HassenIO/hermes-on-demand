@@ -8,7 +8,7 @@ Hermes with terminal tools can run commands. On a VPS that means anyone who can 
 
 | Control | How |
 |---------|-----|
-| No local Hermes on Mac | Deploy scripts target `TARGET_HOST` only |
+| No Hermes on the local machine | Deploy scripts target `TARGET_HOST` only |
 | Telegram allowlist | `TELEGRAM_ALLOWED_USERS` required |
 | Secrets not in git | `.env` gitignored; `.env.sample` has empty placeholders |
 | Runtime secrets mode | `~/.hermes/.env` chmod `600` |

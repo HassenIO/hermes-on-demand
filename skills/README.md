@@ -4,7 +4,7 @@ Custom Hermes skills. Skill files are not committed. This README, and a README i
 
 A skill is a directory with `SKILL.md`. Hermes loads it when you use `/<skill-name>` or ask it to load that skill.
 
-Edit on the Mac, then install on the VPS:
+Edit on the local machine, then install on the VPS:
 
 ```bash
 make skills-push

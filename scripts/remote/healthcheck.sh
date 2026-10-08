@@ -41,7 +41,7 @@ else
   warn "CV.md missing (optional — add artifacts/CV.md and ./scripts/deploy.sh --artifacts)"
 fi
 
-# Timezone (optional but recommended via TIMEZONE= in Mac .env)
+# Timezone (optional but recommended via TIMEZONE= in local .env)
 want_tz=""
 if [[ -f "$HERMES_HOME/.env" ]]; then
   want_tz="$(grep -E '^TIMEZONE=' "$HERMES_HOME/.env" 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '"' || true)"

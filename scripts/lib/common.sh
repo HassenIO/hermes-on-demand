@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared helpers for Mac deploy and remote bootstrap.
+# Shared helpers for local deploy and remote bootstrap.
 
 set -euo pipefail
 

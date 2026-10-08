@@ -4,7 +4,7 @@ Hermes splits settings the official way:
 
 | Kind | File on VPS | Managed from this repo |
 |------|-------------|-------------------------|
-| Secrets | `~/.hermes/.env` | `.env` on Mac → filtered push |
+| Secrets | `~/.hermes/.env` | `.env` on the local machine → filtered push |
 | Non-secrets | `~/.hermes/config.yaml` | `config/config.yaml.example` |
 
 References:
@@ -38,7 +38,7 @@ After `make push-config`, re-run **`make cron-push`** if you changed `cron/jobs.
 
 ## Deploy vs runtime env
 
-### Local-only (Mac `.env`, never written into `~/.hermes/.env`)
+### Local-only (local `.env`, never written into `~/.hermes/.env`)
 
 | Variable | Required | Description |
 |----------|----------|-------------|
@@ -114,7 +114,7 @@ terminal:
 ## Applying config changes
 
 ```bash
-# From Mac, after editing .env or config/config.yaml.example:
+# From the local machine, after editing .env or config/config.yaml.example:
 ./scripts/deploy.sh --config-only
 ```
 

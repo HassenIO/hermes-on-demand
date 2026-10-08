@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Mac control-plane entrypoint. Never installs Hermes on this machine.
+# Local control-plane entrypoint. Never installs Hermes on this machine.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -235,7 +235,7 @@ fi
 
 if [[ "$MODE" == "notion" ]]; then
   if [[ -z "${NOTION_API_KEY:-}" || -z "${NOTION_REPORTS_PARENT_PAGE_ID:-}" ]]; then
-    log "Skipping Notion — both required in Mac .env (neither alone is enough):"
+    log "Skipping Notion — both required in local .env (neither alone is enough):"
     log "  NOTION_API_KEY=ntn_..."
     log "  NOTION_REPORTS_PARENT_PAGE_ID=<parent-page-uuid>"
     log "Docs: docs/tools/notion.md — no VPS changes made."

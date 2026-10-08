@@ -22,7 +22,7 @@ Official: [Notion integrations](https://www.notion.so/my-integrations) · [API](
 
 Share **Job Hunting** (and any other hubs) the same way, or search will return empty.
 
-## Mac `.env`
+## Local `.env`
 
 **Both variables required** or Notion is never configured:
 

@@ -9,7 +9,7 @@ Infrastructure-as-code for running [Nous Research Hermes Agent](https://hermes-a
 | **Agent shell** | Docker backend (path-sanitized for Telegram sessions) |
 | **Web** | SearXNG (`web_search`) + Firecrawl lite (`web_extract`) |
 | **Memory** | Mnemosyne (default) |
-| **Local Mac** | Deploy only — Hermes is **not** installed here |
+| **Local machine** | Deploy only — Hermes is **not** installed here |
 
 ## Golden path (new VPS)
 
@@ -149,7 +149,7 @@ config/config.yaml.example  # model, terminal, web, memory
 docs/
 extensions/                 # agent-reach, notion, registry
 firecrawl/                  # SearXNG + lite API (+ full profile)
-scripts/deploy.sh           # Mac entrypoint (used by Make)
+scripts/deploy.sh           # local entrypoint (used by Make)
 scripts/remote/             # bootstrap, patches, extensions, health
 ```
 

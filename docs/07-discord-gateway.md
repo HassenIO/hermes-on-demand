@@ -4,7 +4,7 @@ Official docs: [Messaging gateway](https://hermes-agent.nousresearch.com/docs/us
 
 This document records **findings** for adding Discord alongside Telegram on this Hermes VPS setup, **manual steps you must finish before repo automation**, multi-platform consequences, and Discord limits (including whether you need a paid plan).
 
-**Status (this repo):** Discord is supported when `DISCORD_BOT_TOKEN` + `DISCORD_ALLOWED_USERS` are set in Mac `.env`. `make push-config` forwards them to the VPS and restarts the gateway. Manual portal setup (§3) is still required first.
+**Status (this repo):** Discord is supported when `DISCORD_BOT_TOKEN` + `DISCORD_ALLOWED_USERS` are set in the local `.env`. `make push-config` forwards them to the VPS and restarts the gateway. Manual portal setup (§3) is still required first.
 
 **Your intended mode:** private Discord server channels + DMs; **cron / home channel on Discord** (Telegram remains available for chat).
 
@@ -306,7 +306,7 @@ When this list is done, implementation can add `DISCORD_*` to `.env.sample`, `de
 
 ## 4. What implementation will need later (not done yet)
 
-### 4.1 Secrets (Mac `.env` → VPS `~/.hermes/.env`)
+### 4.1 Secrets (local `.env` → VPS `~/.hermes/.env`)
 
 ```bash
 # Required
@@ -517,7 +517,7 @@ tail -f ~/.hermes/logs/gateway.log
 ## 10. Activate (after §3.9 checklist)
 
 ```bash
-# Mac: ensure .env has DISCORD_BOT_TOKEN + DISCORD_ALLOWED_USERS (+ home channel)
+# Local machine: ensure .env has DISCORD_BOT_TOKEN + DISCORD_ALLOWED_USERS (+ home channel)
 make push-config
 ```
 

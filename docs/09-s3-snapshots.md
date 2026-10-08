@@ -20,7 +20,7 @@ An empty custom-skill tree does **not** delete the remote `skills/` prefix. A mi
 
 - `~/.hermes/mnemosyne/` and any other SQLite
 - Session transcripts
-- `~/.hermes/.env`, Mac `.env`, bot tokens, API keys
+- `~/.hermes/.env`, local `.env`, bot tokens, API keys
 - Builtin skills under the Hermes install tree
 - Firecrawl / SearXNG data
 
@@ -32,7 +32,7 @@ AWS keys are forwarded in the deploy payload (`remote.env`) so the VPS can uploa
 2. IAM on that key, scoped to the prefix:
    - `s3:ListBucket` on the bucket
    - `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject` on `<prefix>/*`
-3. In Mac `.env` (never commit it), set:
+3. In the local `.env` (never commit it), set:
 
 | Variable | Required | Role |
 |----------|----------|------|
@@ -42,7 +42,7 @@ AWS keys are forwarded in the deploy payload (`remote.env`) so the VPS can uploa
 | `S3_BUCKET` | yes | Bucket name |
 | `S3_PREFIX` | no | Default `hermes/snapshot`. Rejects empty and `..` |
 
-4. From the Mac:
+4. From the local machine:
 
 ```bash
 make s3-snapshot
@@ -89,5 +89,5 @@ Incomplete AWS/S3 env stops the unit instead of leaving it crash-looping.
 
 - One writer. Do not run two gateways or two watchers against the same prefix.
 - This does not restore a new VPS. It only pushes. Memory stays on the current disk.
-- Mac `make skills-push` / `make cron-push` overwrite the VPS, and the watcher then publishes that overwrite. A stale Mac copy can still replace S3.
+- Local `make skills-push` / `make cron-push` overwrite the VPS, and the watcher then publishes that overwrite. A stale local copy can still replace S3.
 - Not a continuous byte-level sync. A burst of writes becomes one upload after the debounce.

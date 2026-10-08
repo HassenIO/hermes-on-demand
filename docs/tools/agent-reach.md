@@ -20,7 +20,7 @@ Generic scrape/search still uses **Firecrawl** (`web.backend: firecrawl`). Use A
 ## Deploy
 
 ```bash
-# From Mac control plane
+# From the local control plane
 ./scripts/deploy.sh --agent-reach
 
 # Or full bootstrap (default includes Agent-Reach)
