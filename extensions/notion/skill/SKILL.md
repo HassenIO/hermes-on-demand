@@ -50,12 +50,12 @@ Credentials: env, or `~/.hermes/notion/env` (mounted into Docker).
 
 ## Job Hunt defaults (Freelance Opportunities)
 
-Configured via env / `~/.hermes/notion/config.env` (also baked into CLI defaults):
+Set in env / `~/.hermes/notion/config.env`. Required for db-query / db-create-opp when `--database` / `--template` are omitted. Not hardcoded.
 
-| Key | Default / purpose |
-|-----|-------------------|
-| `NOTION_FREELANCE_DB_ID` | `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` |
-| `NOTION_ROLE_TEMPLATE_PAGE_ID` | `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` (“Role Name” template) |
+| Key | Purpose |
+|-----|---------|
+| `NOTION_FREELANCE_DB_ID` | Freelance Opportunities database |
+| `NOTION_ROLE_TEMPLATE_PAGE_ID` | “Role Name” template page |
 
 **Schema (typical):** Role Name (title), Company, Company Location (rich_text), Rate (number), Date (date), Stage (select: New / Applied).
 

@@ -70,12 +70,14 @@ notion-cli archive <page_id>
 
 JSON on stdout. Errors on stderr, non-zero exit.
 
-### Job Hunt IDs (defaults in CLI + `~/.hermes/notion/config.env`)
+### Job Hunt IDs
 
-| Env | Default |
+Set these in `.env`. They are not stored in the repo. Deploy forwards them when Notion is enabled; `notion-up.sh` writes them to `~/.hermes/notion/config.env`.
+
+| Env | Purpose |
 |-----|---------|
-| `NOTION_FREELANCE_DB_ID` | `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` |
-| `NOTION_ROLE_TEMPLATE_PAGE_ID` | `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` |
+| `NOTION_FREELANCE_DB_ID` | Freelance Opportunities database |
+| `NOTION_ROLE_TEMPLATE_PAGE_ID` | “Role Name” template page |
 
 `db-create-opp` creates a DB row and copies the “Role Name” template body with placeholder substitution. Dedupes on Role Name + Company.
 

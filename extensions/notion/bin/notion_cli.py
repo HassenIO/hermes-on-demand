@@ -15,9 +15,7 @@ DEFAULT_VERSION = "2022-06-28"
 API = "https://api.notion.com/v1"
 TIMEOUT = 30
 
-# Job Hunt defaults (overridable via env / ~/.hermes/notion/config.env)
-DEFAULT_FREELANCE_DB = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-DEFAULT_ROLE_TEMPLATE = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+# Job Hunt IDs come from env / ~/.hermes/notion/config.env — never hardcode them.
 
 
 def die(msg: str, code: int = 2) -> None:
@@ -71,15 +69,17 @@ def normalize_id(raw: str) -> str:
 
 
 def freelance_db_id() -> str:
-    return normalize_id(
-        os.environ.get("NOTION_FREELANCE_DB_ID") or DEFAULT_FREELANCE_DB
-    )
+    raw = os.environ.get("NOTION_FREELANCE_DB_ID") or ""
+    if not raw:
+        die("NOTION_FREELANCE_DB_ID not set", 3)
+    return normalize_id(raw)
 
 
 def role_template_id() -> str:
-    return normalize_id(
-        os.environ.get("NOTION_ROLE_TEMPLATE_PAGE_ID") or DEFAULT_ROLE_TEMPLATE
-    )
+    raw = os.environ.get("NOTION_ROLE_TEMPLATE_PAGE_ID") or ""
+    if not raw:
+        die("NOTION_ROLE_TEMPLATE_PAGE_ID not set", 3)
+    return normalize_id(raw)
 
 
 def request(method: str, path: str, body: dict | None = None) -> Any:
@@ -640,7 +640,7 @@ def main() -> None:
     s.add_argument(
         "--database",
         default="",
-        help=f"DB id (default NOTION_FREELANCE_DB_ID / {DEFAULT_FREELANCE_DB})",
+        help="DB id (default NOTION_FREELANCE_DB_ID)",
     )
     s.set_defaults(func=cmd_db_schema)
 
