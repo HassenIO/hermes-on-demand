@@ -8,7 +8,13 @@ firecrawl/.env
 __pycache__/
 *.pyc
 
-# Runtime copies. Keep on disk; do not commit.
-/skills/
-/cron/
-/artifacts/
+# Runtime copies. Only README.md in these trees is committed.
+/skills/**
+!/skills/**/
+!/skills/**/README.md
+/cron/**
+!/cron/**/
+!/cron/**/README.md
+/artifacts/**
+!/artifacts/**/
+!/artifacts/**/README.md
