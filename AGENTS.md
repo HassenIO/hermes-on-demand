@@ -16,7 +16,7 @@ Infrastructure-as-code for Nous Research Hermes Agent on an Ubuntu VPS. This che
 - Do not add `AWS_*` to `terminal.docker_forward_env`. S3 keys must not enter the agent sandbox.
 - Do not bake Notion page IDs or other tenant IDs into the repo. They belong in `.env` only.
 - Do not run `make deploy`, `full`, `push-config`, `push-artifacts`, `skills-push`, `cron-push`, `update`, `setup-*`, or `s3-snapshot` unless the user asked. Those mutate the VPS. `make health` only when a remote check was asked.
-- Do not commit unless the user asked. Do not commit `skills/**`, `cron/**`, or `artifacts/**` except each `README.md`.
+- Do not commit unless the user asked. When committing, follow `COMMIT_GUIDELINES.md` exactly: `<type>[(<scope>)]: <subject>`, imperative sentence case, no trailing period, subject at most 50 characters. The body says why, wrapped at 72. Do not commit `skills/**`, `cron/**`, or `artifacts/**` except each `README.md`.
 
 ## Where things are
 
