@@ -1,0 +1,42 @@
+# Runs on every pull request open or push. Local checks only: no SSH, no VPS.
+# Comment text is built by scripts/ci/pr-comment.mjs. Do not inline that logic here.
+name: PR checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Lint
+        id: lint
+        run: scripts/ci/run-check.sh lint
+
+      - name: Test
+        id: test
+        if: always()
+        run: scripts/ci/run-check.sh test
+
+      - name: Comment on the pull request
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          LINT_OUTCOME: ${{ steps.lint.outcome }}
+          TEST_OUTCOME: ${{ steps.test.outcome }}
+        run: node scripts/ci/pr-comment.mjs

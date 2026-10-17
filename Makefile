@@ -8,7 +8,7 @@ SHELL := /bin/bash
 ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 DEPLOY := $(ROOT)/scripts/deploy.sh
 
-.PHONY: help check-env test ssh skills-pull skills-push cron-pull cron-push \
+.PHONY: help check-env lint test ssh skills-pull skills-push cron-pull cron-push \
 	deploy full push-config push-artifacts health update s3-snapshot \
 	setup-firecrawl setup-mnemosyne setup-agent-reach setup-notion
 
@@ -34,6 +34,7 @@ help: ## Show this help
 	@echo "  make cron-pull         Pull scheduled jobs → ./cron/jobs.json"
 	@echo "  make cron-push         Push ./cron/jobs.json → VPS"
 	@echo "  make s3-snapshot       Mirror VPS skills + cron → S3 and start watcher"
+	@echo "  make lint              bash -n on scripts (no .env, no SSH)"
 	@echo "  make test              Local unit tests (no .env, no SSH)"
 	@echo ""
 	@echo "Setup extensions:"
@@ -51,6 +52,9 @@ help: ## Show this help
 check-env: ## Verify .env exists (does not print secrets)
 	@test -f "$(ROOT)/.env" || { echo "ERROR: missing .env — cp .env.sample .env"; exit 1; }
 	@echo "OK  $(ROOT)/.env"
+
+lint: ## Syntax-check shell scripts with bash -n (no .env, no SSH)
+	@find "$(ROOT)/scripts" -name '*.sh' -print0 | xargs -0 -n1 bash -n
 
 test: ## Run local unit tests with uv (no .env, no SSH)
 	@command -v uv >/dev/null 2>&1 || { echo "ERROR: uv is required. See docs/11-testing.md"; exit 1; }
