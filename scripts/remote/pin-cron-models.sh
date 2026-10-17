@@ -74,32 +74,7 @@ fi
 FORCE="${PIN_CRON_FORCE:-0}"
 log "Pinning cron jobs to provider=$PROVIDER model=$MODEL (force=$FORCE; preserve explicit overrides)"
 
-PIN_LINES="$(python3 - "$JOBS_JSON" "$MODEL" "$FORCE" <<'PY'
-from pathlib import Path
-import json, sys
-p = Path(sys.argv[1])
-target = (sys.argv[2] or "").strip()
-force = sys.argv[3].strip() in ("1", "true", "yes")
-if not p.exists():
-    raise SystemExit(0)
-data = json.loads(p.read_text())
-jobs = data.get("jobs") if isinstance(data, dict) else data
-if isinstance(jobs, dict):
-    jobs = list(jobs.values())
-if not isinstance(jobs, list):
-    raise SystemExit(0)
-for j in jobs:
-    if not isinstance(j, dict) or not j.get("id"):
-        continue
-    jid = j["id"]
-    cur = (j.get("model") or "").strip()
-    name = (j.get("name") or jid)[:48]
-    if force or not cur or cur == target:
-        print(f"pin\t{jid}\t{name}")
-    else:
-        print(f"skip\t{jid}\t{name}\t{cur}")
-PY
-)"
+PIN_LINES="$(python3 "$SCRIPT_DIR/../lib/pin_decision.py" "$JOBS_JSON" "$MODEL" "$FORCE")"
 
 if [[ -z "${PIN_LINES//[$'\n\r\t ']/}" ]]; then
   log "No cron jobs found — nothing to pin"

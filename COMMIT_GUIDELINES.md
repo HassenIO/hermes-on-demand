@@ -2,7 +2,7 @@
 
 Rules for commit messages in this repo. This is infrastructure-as-code for a Hermes VPS. The product is the deploy scripts, config, and docs. A script or doc fix is a real fix.
 
-There is no commit-msg hook and no pull-request template file. Pull requests are still required. Branch and pull-request steps are in `CODING_GUIDELINES.md`. Do not commit on `master`. Agents follow both files. Do not commit unless the user asked. Do not push unless the user asked.
+There is no commit-msg hook and no pull-request template file. Pull requests are still required. Branch and pull-request steps are in `CODING_GUIDELINES.md`. Do not commit on `master`. `make test` is the local test runner. There is no CI. Agents follow both files. Do not commit unless the user asked. Do not push unless the user asked.
 
 ## Format
 
@@ -54,9 +54,10 @@ Optional. Use only what the user gave you.
 | `docs` | Documentation only, including a docs link |
 | `refactor` | Restructure scripts without changing what deploy does |
 | `chore` | Maintenance that is not a behavior change (ignore rules, wording that does not correct a lie) |
+| `test` | Tests only. No script, config, or behavior change |
 | `revert` | Revert an earlier commit |
 
-Do not use `test:`. There is no test runner. Check edited scripts with `bash -n` before committing.
+`test:` is for a commit that only adds or edits tests. A script or config behavior change uses `feat`, `fix`, or `refactor`, not `test:`.
 
 Do not use `ci:`. There is no CI.
 
@@ -94,10 +95,18 @@ One-way snapshot of those two paths only. The bucket must already
 exist. SQLite, sessions, and secrets stay off the mirror.
 ```
 
+```
+test: Cover cron shape rejects
+
+A bad jobs.json used to fail only after upload. Lock the
+pre-SSH error strings so a later edit cannot drift them.
+```
+
 ## Before committing
 
 1. The user asked for the commit, and `git branch --show-current` is not `master`. If it is `master`, follow `CODING_GUIDELINES.md` before committing.
 2. The subject matches a type above and is within 50 characters.
 3. The body says why, if the subject does not.
 4. `bash -n` passed on every edited shell script.
-5. The diff has no secrets and no runtime copies under `skills/`, `cron/`, or `artifacts/`.
+5. `make test` passed. A script behavior change is not ready without it, alongside `bash -n`. Do not weaken or skip tests to make a commit pass.
+6. The diff has no secrets and no runtime copies under `skills/`, `cron/`, or `artifacts/`.

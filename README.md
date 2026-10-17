@@ -30,7 +30,7 @@ Then in Telegram: message the bot → optional `/sethome` → **`/new`** → cha
 
 ## Make commands
 
-Run from the repo root. All targets require a filled `.env`.
+Run from the repo root. Targets that talk to the VPS require a filled `.env`. `make help` and `make test` do not.
 
 ### Most used
 
@@ -72,6 +72,7 @@ make setup-notion     # only configures when both NOTION_* vars are in .env
 ```bash
 make help         # list targets
 make check-env    # confirm .env exists (no secrets printed)
+make test         # local unit tests (no .env, no SSH)
 ```
 
 Equivalent raw entrypoint (same flags): `./scripts/deploy.sh [--config-only|…]`.
@@ -136,6 +137,7 @@ SKIP_FIRECRAWL=1 SKIP_MNEMOSYNE=1 SKIP_AGENT_REACH=1 make deploy
 - [Skills catalog](docs/08-skills.md) — custom skills + links to `SKILL.md`
 - [S3 snapshots](docs/09-s3-snapshots.md) — skills + cron mirror
 - [Deployment testing](docs/10-deployment-testing.md) — disposable VPS, test bot, health, Telegram smoke test
+- [Local unit tests](docs/11-testing.md) — `make test`, no SSH
 - [Content generation](docs/content-generation.md) — long-form pipeline
 - [Tools](docs/tools/README.md) — Firecrawl/SearXNG, Mnemosyne, Agent-Reach, Notion, memory profile
 - [Troubleshooting](docs/troubleshooting.md)
@@ -154,6 +156,7 @@ extensions/                 # agent-reach, notion, registry
 firecrawl/                  # SearXNG + lite API (+ full profile)
 scripts/deploy.sh           # local entrypoint (used by Make)
 scripts/remote/             # bootstrap, patches, extensions, health
+tests/                      # local unit tests (make test)
 ```
 
 ## Official upstream
