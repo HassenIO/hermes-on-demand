@@ -2,7 +2,7 @@
 
 Rules for commit messages in this repo. This is infrastructure-as-code for a Hermes VPS. The product is the deploy scripts, config, and docs. A script or doc fix is a real fix.
 
-There is no commit-msg hook and no pull-request template file. Pull requests are still required. Branch, review, and pull-request steps are in `CODING_GUIDELINES.md`. Do not commit on `master`. Do not commit or push until the user has reviewed the work and explicitly said to. `make test` is the local test runner. There is no CI. Agents follow both files.
+There is no commit-msg hook and no pull-request template file. Pull requests are still required. Branch, review, and pull-request steps are in `CODING_GUIDELINES.md`. Do not commit on `master`. Do not commit or push until the user has reviewed the work and explicitly said to. `make lint` and `make test` are the local checks. Pull requests run both in `.github/workflows/pr-checks.yml`. Agents follow both files.
 
 ## Format
 
@@ -59,7 +59,7 @@ Optional. Use only what the user gave you.
 
 `test:` is for a commit that only adds or edits tests. A script or config behavior change uses `feat`, `fix`, or `refactor`, not `test:`.
 
-Do not use `ci:`. There is no CI.
+`ci:` is only for `.github/workflows`. A script or config behavior change is not `ci:`.
 
 `perf:` and `style:` are rare. A new Makefile target is `feat`, not `build`. A help line that described a target wrongly is `fix`.
 

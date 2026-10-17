@@ -89,6 +89,16 @@ def test_only_deploy_and_full_invoke_deploy_without_a_mode() -> None:
                 assert "--" in line, line
 
 
+def test_lint_target_is_bash_n_only() -> None:
+    text = (ROOT / "Makefile").read_text()
+    _phony, targets = parse_makefile(text)
+    _comment, recipe, prereqs = targets["lint"]
+    assert prereqs == ""
+    assert "bash -n" in recipe
+    assert "ssh" not in recipe
+    assert "uv " not in recipe
+
+
 def test_test_target_does_not_ssh_or_load_env() -> None:
     text = (ROOT / "Makefile").read_text()
     _phony, targets = parse_makefile(text)

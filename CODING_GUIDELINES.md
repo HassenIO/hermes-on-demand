@@ -62,7 +62,7 @@ Do not treat "commit" as permission to push or to merge. Do not treat "push" as 
 
 - One branch, one pull request, base `master`.
 - Title matches a commit subject: `<type>[(<scope>)]: <subject>`. It may run past 50 characters if a shorter title would be unclear.
-- Body says why, and how to test. For a script change that is `bash -n` on the edited scripts. For a behavior change after `make test` exists on the branch, include that too.
+- Body says why, and how to test. Script changes need `make lint`. Behavior changes need `make test`. The pull request workflow runs both and comments the result.
 - Do not merge the pull request unless the user asked.
 - Do not force-push `master`. Force-push a feature branch only if the user asked to rewrite that branch.
 
