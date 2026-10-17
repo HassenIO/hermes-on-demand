@@ -2,7 +2,7 @@
 
 Rules for commit messages in this repo. This is infrastructure-as-code for a Hermes VPS. The product is the deploy scripts, config, and docs. A script or doc fix is a real fix.
 
-There is no commit-msg hook, no test suite, and no pull-request template. Agents follow this file themselves. Do not commit unless the user asked. Do not push unless the user asked.
+There is no commit-msg hook and no pull-request template file. Pull requests are still required. Branch and pull-request steps are in `CODING_GUIDELINES.md`. Do not commit on `master`. Agents follow both files. Do not commit unless the user asked. Do not push unless the user asked.
 
 ## Format
 
@@ -96,7 +96,7 @@ exist. SQLite, sessions, and secrets stay off the mirror.
 
 ## Before committing
 
-1. The user asked for the commit.
+1. The user asked for the commit, and `git branch --show-current` is not `master`. If it is `master`, follow `CODING_GUIDELINES.md` before committing.
 2. The subject matches a type above and is within 50 characters.
 3. The body says why, if the subject does not.
 4. `bash -n` passed on every edited shell script.
