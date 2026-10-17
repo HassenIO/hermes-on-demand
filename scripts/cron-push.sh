@@ -33,30 +33,7 @@ trap 'ssh_cmd "rm -f \"$REMOTE_TMP\" /tmp/install-cron-jobs.sh" 2>/dev/null || t
 [[ -f "$SRC" ]] || die "missing $SRC — run make cron-pull first or add jobs there"
 
 # Local validate before network
-python3 - "$SRC" <<'PY'
-import json, sys
-from pathlib import Path
-raw = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-jobs = raw.get("jobs", raw) if isinstance(raw, dict) else raw
-if not isinstance(jobs, list) or not jobs:
-    raise SystemExit("cron/jobs.json must contain a non-empty jobs list")
-ids = set()
-for i, j in enumerate(jobs):
-    if not isinstance(j, dict) or not j.get("id"):
-        raise SystemExit(f"job[{i}] needs an id")
-    if j["id"] in ids:
-        raise SystemExit(f"duplicate id: {j['id']}")
-    ids.add(j["id"])
-    if not j.get("name"):
-        raise SystemExit(f"job {j['id']}: missing name")
-    if not isinstance(j.get("schedule"), dict):
-        raise SystemExit(f"job {j['id']}: schedule must be an object")
-print(f"local_jobs={len(jobs)}")
-for j in jobs:
-    en = "on" if j.get("enabled", True) else "off"
-    sched = j.get("schedule_display") or (j.get("schedule") or {}).get("expr") or "?"
-    print(f"  [{en}] {j['id']}  {j.get('name')}  schedule={sched}")
-PY
+python3 "$ROOT/scripts/lib/cron_validate.py" "$SRC"
 
 log "SSH probe ${TARGET_USER}@${TARGET_HOST}:${SSH_PORT}"
 ssh_cmd "true"

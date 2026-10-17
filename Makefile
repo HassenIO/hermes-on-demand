@@ -8,7 +8,7 @@ SHELL := /bin/bash
 ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 DEPLOY := $(ROOT)/scripts/deploy.sh
 
-.PHONY: help check-env ssh skills-pull skills-push cron-pull cron-push \
+.PHONY: help check-env test ssh skills-pull skills-push cron-pull cron-push \
 	deploy full push-config push-artifacts health update s3-snapshot \
 	setup-firecrawl setup-mnemosyne setup-agent-reach setup-notion
 
@@ -34,6 +34,7 @@ help: ## Show this help
 	@echo "  make cron-pull         Pull scheduled jobs → ./cron/jobs.json"
 	@echo "  make cron-push         Push ./cron/jobs.json → VPS"
 	@echo "  make s3-snapshot       Mirror VPS skills + cron → S3 and start watcher"
+	@echo "  make test              Local unit tests (no .env, no SSH)"
 	@echo ""
 	@echo "Setup extensions:"
 	@echo "  make setup-firecrawl     SearXNG + Firecrawl lite"
@@ -50,6 +51,17 @@ help: ## Show this help
 check-env: ## Verify .env exists (does not print secrets)
 	@test -f "$(ROOT)/.env" || { echo "ERROR: missing .env — cp .env.sample .env"; exit 1; }
 	@echo "OK  $(ROOT)/.env"
+
+test: ## Run local unit tests (no .env, no SSH)
+	@cd "$(ROOT)" && export PYTHONDONTWRITEBYTECODE=1 && \
+		if python3 -c 'import pytest' >/dev/null 2>&1; then \
+			python3 -m pytest -q; \
+		elif command -v uv >/dev/null 2>&1; then \
+			uv run --offline --no-project --with 'pytest>=8.3' pytest -q; \
+		else \
+			echo "ERROR: pytest is not installed. See docs/11-testing.md"; \
+			exit 1; \
+		fi
 
 ssh: check-env ## Interactive SSH shell on TARGET_HOST (from .env)
 	@set -a && source "$(ROOT)/.env" && set +a && \

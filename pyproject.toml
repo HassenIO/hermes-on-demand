@@ -1,0 +1,20 @@
+[project]
+name = "hermes-control-plane"
+version = "0.0.0"
+description = "Local control plane for a Hermes VPS. Unit tests only; Hermes is not installed here."
+requires-python = ">=3.12"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.3"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["scripts/lib"]
+addopts = "-p no:cacheprovider"

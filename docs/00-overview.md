@@ -57,6 +57,7 @@ scripts/deploy.sh            --runs-->    scripts/remote/bootstrap.sh
 | [05-operations](05-operations.md) | Update, logs, backup |
 | [09-s3-snapshots](09-s3-snapshots.md) | Skills + cron mirror to S3 |
 | [10-deployment-testing](10-deployment-testing.md) | Disposable VPS end-to-end test |
+| [11-testing](11-testing.md) | Local unit tests (`make test`) |
 | [06-security](06-security.md) | Hardening checklist |
 | [07-discord-gateway](07-discord-gateway.md) | Discord findings, manual prep, Telegram+Discord |
 | [tools/](tools/README.md) | Optional tool integrations (Firecrawl, …) |
