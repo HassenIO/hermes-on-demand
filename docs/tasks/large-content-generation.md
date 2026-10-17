@@ -287,18 +287,11 @@ PUBLISH        file + structured Notion; chat/Discord = teaser + link only
 - Do not put the entire editorial manual in SOUL or one mega-skill (token death).  
 - Do not use `notion-cli create-report` for structured long docs.  
 - Do not rely on chat memory for cron content.  
-- Do not change the **global** default chat model to a expensive frontier model (cost/latency); route per stage instead.
+- Do not change the **global** default chat model to an expensive frontier model, and do not pin Sonnet for a stage. Chat, cron, and long-form content use `model.default`.
 
-### 4.3 Model routing policy (decided)
+### 4.3 Model routing policy (superseded)
 
-| Stage | Model class | Notes |
-|---|---|---|
-| Research, search, inventory, extract | Default / flash (`xiaomi/mimo-v2.5` or successor) | Parallel subagents OK |
-| Outline (optional) | Mid or strong | Prefer strong if outline is the quality bottleneck |
-| **Draft + verify + continuity + compile** | **Always stronger** | Pin OpenRouter ID in skill + cron `model:` |
-| Interactive chat (general) | Unchanged default | User can `/model` for one-off long jobs |
-
-Exact strong-model ID should be recorded in `skills/content/editorial-os/references/model-routing.md` and matched to what the OpenRouter/Nous Portal key can call. Examples of the class intended: Claude Sonnet/Opus-class, GPT-class frontier — pick one primary and one fallback.
+Superseded. Chat, cron, and long-form content use `model.default` in `config/config.yaml.example`. Do not pin Sonnet. See `docs/content-generation.md`. Do not set a different model on a cron job unless the user asked for that override.
 
 ### 4.4 Genre-specific quality bars
 

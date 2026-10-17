@@ -43,7 +43,7 @@ Hermes with terminal tools can run commands. On a VPS that means anyone who can 
 - `ufw default deny incoming` + allow SSH only (or tailscale/wireguard only)
 - Automatic security updates (`unattended-upgrades`)
 - Separate deploy user (not shared with other apps)
-- Regular `hermes update` and OS patches
+- Regular `make update` (not bare `hermes update`) and OS patches
 
 ## What this stack does not do yet
 

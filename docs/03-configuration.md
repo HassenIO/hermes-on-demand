@@ -93,7 +93,7 @@ model:
 
 - Provider uses `OPENROUTER_API_KEY` from `.env`
 - Model catalog page: [xiaomi/mimo-v2.5](https://openrouter.ai/xiaomi/mimo-v2.5)
-- Change model later on the VPS with `hermes model`, or edit `config.yaml` and `./scripts/deploy.sh --config-only`
+- Change the model in `config/config.yaml.example`, then `make push-config` (pins cron). Do not use `hermes model` on the VPS.
 
 Do **not** put `LLM_MODEL` in `.env` — upstream removed that; `config.yaml` is source of truth.
 
@@ -102,9 +102,9 @@ Do **not** put `LLM_MODEL` in `.env` — upstream removed that; `config.yaml` is
 ```yaml
 terminal:
   backend: docker
-  docker_image: "nikolaik/python-nodejs:python3.11-nodejs20"
+  docker_image: "hermes-terminal:agent-reach"
   container_cpu: 1
-  container_memory: 2048
+  container_memory: 768
 ```
 
 - Agent shell commands run inside Docker, not as unrestricted host root

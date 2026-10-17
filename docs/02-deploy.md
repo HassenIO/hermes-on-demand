@@ -86,7 +86,7 @@ Both run `hermes update`, re-apply the path sanitize patch, refresh CLI links, r
 
 ## Docker sandbox notes (small VPS)
 
-- Config uses `container_memory: 512` and `docker_shm_size: 64m` (raise on larger hosts).
+- Config uses `container_memory: 768` and `docker_shm_size: 64m` (raise on larger hosts by editing `config/config.yaml.example`).
 - Memories dir is mounted read-only into the sandbox.
 - Path sanitize: session IDs with `:` become safe directory names under `~/.hermes/sandboxes/docker/`.
 

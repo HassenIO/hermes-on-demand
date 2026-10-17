@@ -83,7 +83,7 @@ Equivalent raw entrypoint (same flags): `./scripts/deploy.sh [--config-only|…]
 **Change model or terminal settings**
 
 1. Edit `config/config.yaml.example`
-2. `make push-config` — also **pins all cron jobs** to the new model (avoids `drift_skip`)
+2. `make push-config` — pins cron jobs to `model.default`, except a job that already names a different model (avoids `drift_skip`)
 3. Telegram: `/new`
 
 **Update profile / CV**

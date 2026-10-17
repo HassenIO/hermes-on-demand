@@ -54,20 +54,18 @@ Works as an AI engineer; interested in Go (Baduk).
 
 Limits (defaults): user **1,375** chars, memory **2,200** chars total.
 
-Hermes injects these at **session start** as:
+Built-in injection is off (`memory_enabled` and `user_profile_enabled` are false) so these seeds are not double-injected. Mnemosyne is the memory provider. See `docs/tools/mnemosyne.md`.
 
-- `USER PROFILE (who the user is)`
-- `MEMORY (your personal notes)`
-
-Mid-session `memory` tool writes update disk immediately but only appear in the system prompt on the **next** session (`/new` or new chat).
+Mid-session `memory` tool writes update disk immediately. Start a new session (`/new`) before expecting profile changes in context.
 
 ## Config
 
 ```yaml
 # config/config.yaml.example → ~/.hermes/config.yaml
 memory:
-  memory_enabled: true
-  user_profile_enabled: true
+  provider: mnemosyne
+  memory_enabled: false
+  user_profile_enabled: false
   memory_char_limit: 2200
   user_char_limit: 1375
 ```
