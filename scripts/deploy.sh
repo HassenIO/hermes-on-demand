@@ -24,12 +24,12 @@ Usage: ./scripts/deploy.sh [--config-only|--health|--firecrawl|--artifacts|--upd
 
   (default)      Full remote bootstrap (Hermes + Firecrawl + Mnemosyne + Agent-Reach + artifacts)
   --config-only  Push secrets + config.yaml + artifacts, re-apply Docker patch, restart
-  --artifacts    Push artifacts (SOUL/USER/MEMORY/CV) only
+  --artifacts    Push profile seeds; also syncs payload, applies timezone, restarts gateway
   --health       Remote healthcheck (re-applies Docker patch if missing)
   --firecrawl    Deploy/start self-hosted Firecrawl only
   --mnemosyne    Install/refresh Mnemosyne side-venv + Hermes wrapper plugin
   --agent-reach  Build terminal image + install Agent-Reach skill (zero-config web CLIs)
-  --notion       Notion REST CLI + skill (no-op unless BOTH NOTION_* vars are set)
+  --notion       Notion REST CLI + skill (install skipped unless BOTH NOTION_* are set; payload sync and timezone still run)
   --update       hermes update + Docker patch + Mnemosyne + Agent-Reach + Notion refresh
   --s3-snapshot  Mirror custom skills + cron/jobs.json to S3 (no gateway restart)
 EOF
@@ -238,10 +238,10 @@ if [[ "$MODE" == "notion" ]]; then
     log "Skipping Notion — both required in local .env (neither alone is enough):"
     log "  NOTION_API_KEY=ntn_..."
     log "  NOTION_REPORTS_PARENT_PAGE_ID=<parent-page-uuid>"
-    log "Docs: docs/tools/notion.md — no VPS changes made."
+    log "Docs: docs/tools/notion.md — Notion install skipped. Payload sync and timezone already ran."
     exit 0
   fi
-  log "Installing Notion MCP + notion-reports skill"
+  log "Installing Notion REST CLI + notion-reports skill"
   ssh_cmd "REMOTE_ENV='$REMOTE_DIR/remote.env' bash '$REMOTE_DIR/scripts/remote/notion-up.sh'"
   log "Notion done. /new in Telegram, then ask to post a test report."
   exit 0
@@ -281,7 +281,7 @@ if [[ -L "\$HOME/.local/bin/hermes" ]] || [[ ! -e "\$HOME/.local/bin/hermes" ]];
 fi
 hermes gateway restart 2>/dev/null || hermes gateway start
 hermes gateway status || true
-# Pin all cron jobs to the model just written in config.yaml (avoid drift_skip)
+# Pin cron jobs to model.default (skip a different explicit model; avoid drift_skip)
 bash '$REMOTE_DIR/scripts/remote/pin-cron-models.sh' || true
 EOF
   # Re-apply Notion if both keys present (config.yaml.example has no mcp/notion blocks)

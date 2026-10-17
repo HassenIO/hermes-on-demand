@@ -21,7 +21,7 @@ When you change `model.default` / `model.provider` in `config/config.yaml.exampl
 hermes cron edit <job_id> --provider <provider> --model <model>
 ```
 
-This avoids Hermes `drift_skip` (unpinned jobs refuse to run after global model drift). Jobs that already have an **explicit model different from** `model.default` (e.g. Go newsletter on a strong write model) are **left alone**. To force every job onto the config default:
+This avoids Hermes `drift_skip` (unpinned jobs refuse to run after global model drift). Jobs that already have an **explicit model different from** `model.default` are **left alone**. Do not add that override unless the user asked. To force every job onto the config default:
 
 ```bash
 PIN_CRON_FORCE=1 bash scripts/remote/pin-cron-models.sh   # on VPS
@@ -74,7 +74,7 @@ After `make push-config`, re-run **`make cron-push`** if you changed `cron/jobs.
 | `FIRECRAWL_API_KEY` | no | Web scraping if enabled |
 | `NOTION_API_KEY` | no* | Notion internal integration (`ntn_…`). *Both Notion vars required together* |
 | `NOTION_REPORTS_PARENT_PAGE_ID` | no* | Parent page UUID. Without this, Notion is **not** configured even if the key is set |
-| `NOTION_TOKEN` | no | Alias of `NOTION_API_KEY` for MCP (set automatically when both are present) |
+| `NOTION_TOKEN` | no | Alias of `NOTION_API_KEY`, set automatically when both Notion vars are present. Not an MCP credential |
 | `VOICE_TOOLS_OPENAI_KEY` | no | Cloud STT/TTS |
 | `GROQ_API_KEY` | no | Groq Whisper STT |
 | `GITHUB_TOKEN` | no | Skills hub rate limits |

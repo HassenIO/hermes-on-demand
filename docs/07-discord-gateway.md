@@ -491,7 +491,7 @@ tail -f ~/.hermes/logs/gateway.log
 
 ## 8. Comparison snapshot: Telegram vs Discord (this stack)
 
-| | Telegram (current) | Discord (planned) |
+| | Telegram (current) | Discord (current) |
 |--|--------------------|-------------------|
 | Transport | Long poll (default) | Persistent WebSocket |
 | Inbound ports | None | None |

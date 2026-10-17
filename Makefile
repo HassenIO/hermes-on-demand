@@ -25,7 +25,7 @@ help: ## Show this help
 	@echo "Most used:"
 	@echo "  make deploy            Full bootstrap / refresh stack"
 	@echo "  make push-config       Push .env + config.yaml + artifacts, restart"
-	@echo "  make push-artifacts    Push SOUL/USER/MEMORY/CV only"
+	@echo "  make push-artifacts    Push seeds; also syncs payload, timezone, restarts gateway"
 	@echo "  make health            Remote healthcheck"
 	@echo "  make update            hermes update + repairs"
 	@echo "  make ssh               Interactive SSH to TARGET_HOST"
@@ -39,7 +39,7 @@ help: ## Show this help
 	@echo "  make setup-firecrawl     SearXNG + Firecrawl lite"
 	@echo "  make setup-mnemosyne     Mnemosyne memory provider"
 	@echo "  make setup-agent-reach   Terminal image + internet CLIs skill"
-	@echo "  make setup-notion        Notion REST CLI (needs both NOTION_* env vars)"
+	@echo "  make setup-notion        Notion install skipped unless both NOTION_*; payload and timezone still run"
 	@echo ""
 	@echo "All targets:"
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -83,7 +83,7 @@ full: deploy ## Alias for make deploy
 push-config: check-env ## Push secrets + config.yaml + artifacts; restart gateway
 	@$(DEPLOY) --config-only
 
-push-artifacts: check-env ## Push profile seeds (SOUL / USER / MEMORY / CV)
+push-artifacts: check-env ## Push profile seeds; also syncs payload, applies timezone, restarts gateway
 	@$(DEPLOY) --artifacts
 
 health: check-env ## Remote healthcheck
@@ -103,5 +103,5 @@ setup-mnemosyne: check-env ## Install/refresh Mnemosyne side-venv + wrapper
 setup-agent-reach: check-env ## Build agent-reach Docker image + skill
 	@$(DEPLOY) --agent-reach
 
-setup-notion: check-env ## Notion REST CLI + skill (no-op unless both NOTION_* vars set)
+setup-notion: check-env ## Notion REST CLI + skill (install skipped unless both NOTION_* are set; payload sync and timezone still run)
 	@$(DEPLOY) --notion

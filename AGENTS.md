@@ -53,6 +53,5 @@ Infrastructure-as-code for Nous Research Hermes Agent on an Ubuntu VPS. This che
 ## Known pitfalls
 
 - Do not run `hermes doctor --fix` to repair a broken `hermes` command. It can loop the `~/.local/bin/hermes` symlink. `make push-config` relinks it.
-- The `make setup-notion` log line "no VPS changes made" is false when Notion is skipped. Payload sync and timezone already ran.
 
 <!-- /bmad:context -->

@@ -67,7 +67,7 @@ if [[ -f "$SCRIPT_DIR/notion-up.sh" && -f "$HERMES_HOME/.env" ]]; then
   _nk="$(grep -E '^NOTION_API_KEY=.' "$HERMES_HOME/.env" 2>/dev/null | head -1 || true)"
   _np="$(grep -E '^NOTION_REPORTS_PARENT_PAGE_ID=.' "$HERMES_HOME/.env" 2>/dev/null | head -1 || true)"
   if [[ -n "$_nk" && -n "$_np" ]]; then
-    log "Refreshing Notion (MCP + skill)"
+    log "Refreshing Notion (REST CLI + skill)"
     bash "$SCRIPT_DIR/notion-up.sh" || warn "Notion refresh failed"
   else
     log "Skipping Notion refresh (need both NOTION_API_KEY and NOTION_REPORTS_PARENT_PAGE_ID)"
