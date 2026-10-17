@@ -7,6 +7,8 @@ firecrawl/.env
 .DS_Store
 __pycache__/
 *.pyc
+.venv/
+*.egg-info/
 
 # Runtime copies. Only README.md in these trees is committed.
 /skills/**

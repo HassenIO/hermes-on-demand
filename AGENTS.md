@@ -28,7 +28,7 @@ Infrastructure-as-code for Nous Research Hermes Agent on an Ubuntu VPS. This che
 
 ## Running and verifying
 
-- `make test` is the test runner. It runs local pytest only: no `.env`, no SSH, no VPS. There is no CI. Run it before committing, and when changing `scripts/deploy.sh`, `scripts/lib/runtime-env.sh`, cron validation, or the cron pin decision. If that decision changes, extend `tests/` in the same change. Do not weaken or skip these tests to land a feature. Do not add deployment, health, Telegram, Docker, SSH, or network tests here, and do not test `notion_cli.py`. `bash -n` still applies to edited shell scripts. `make check-env` only tests that `.env` exists and does not print secrets. See `docs/11-testing.md`.
+- `make test` is the test runner. It runs pytest through `uv run --no-env-file` only: no `.env`, no SSH, no VPS. Do not run the suite with pip or `python3 -m pytest`. There is no CI. Run it before committing, and when changing `scripts/deploy.sh`, `scripts/lib/runtime-env.sh`, cron validation, or the cron pin decision. If that decision changes, extend `tests/` in the same change. Do not weaken or skip these tests to land a feature. Do not add deployment, health, Telegram, Docker, SSH, or network tests here, and do not test `notion_cli.py`. `bash -n` still applies to edited shell scripts. `make check-env` only tests that `.env` exists and does not print secrets. See `docs/11-testing.md`.
 - `make health` re-applies `scripts/remote/patch-hermes-docker.sh` only if the colon-path marker is missing, using the copy already on the VPS. It does not upload a new patch.
 - Timezone comes from `TIMEZONE` in `.env`, default `Asia/Dubai`. Every deploy mode except `health` applies it. Do not hardcode another zone in scripts.
 

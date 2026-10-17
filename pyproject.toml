@@ -4,7 +4,7 @@ version = "0.0.0"
 description = "Local control plane for a Hermes VPS. Unit tests only; Hermes is not installed here."
 requires-python = ">=3.12"
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = ["pytest>=8.3"]
 
 [build-system]

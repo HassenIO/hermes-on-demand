@@ -39,17 +39,12 @@ No deployment, health, or Telegram tests. No Docker, SSH, or network. Do not uni
 
 ## How to run
 
-Python 3.12 or newer. Pytest is the dev dependency in `pyproject.toml`. From the repo root:
+Python 3.12 or newer. `uv` is required. Pytest is the `dev` dependency group in `pyproject.toml`. From the repo root:
 
 ```bash
-python3 -m pip install 'pytest>=8.3'
 make test
 ```
 
-`make test` runs `python3 -m pytest` when that module imports. If it does not, and `uv` is on `PATH`, it runs `uv run --offline` so the test run does not fetch packages. Warm that cache once if pip cannot install into this Python:
-
-```bash
-uv run --no-project --with 'pytest>=8.3' pytest --version
-```
+That runs `uv run --no-env-file pytest`. `--no-env-file` is required so uv does not load `.env`. Do not run pytest through pip or a system `python3 -m pytest`.
 
 The tests do not install Hermes.

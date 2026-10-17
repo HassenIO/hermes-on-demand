@@ -52,16 +52,9 @@ check-env: ## Verify .env exists (does not print secrets)
 	@test -f "$(ROOT)/.env" || { echo "ERROR: missing .env — cp .env.sample .env"; exit 1; }
 	@echo "OK  $(ROOT)/.env"
 
-test: ## Run local unit tests (no .env, no SSH)
-	@cd "$(ROOT)" && export PYTHONDONTWRITEBYTECODE=1 && \
-		if python3 -c 'import pytest' >/dev/null 2>&1; then \
-			python3 -m pytest -q; \
-		elif command -v uv >/dev/null 2>&1; then \
-			uv run --offline --no-project --with 'pytest>=8.3' pytest -q; \
-		else \
-			echo "ERROR: pytest is not installed. See docs/11-testing.md"; \
-			exit 1; \
-		fi
+test: ## Run local unit tests with uv (no .env, no SSH)
+	@command -v uv >/dev/null 2>&1 || { echo "ERROR: uv is required. See docs/11-testing.md"; exit 1; }
+	@cd "$(ROOT)" && PYTHONDONTWRITEBYTECODE=1 uv run --no-env-file pytest -q
 
 ssh: check-env ## Interactive SSH shell on TARGET_HOST (from .env)
 	@set -a && source "$(ROOT)/.env" && set +a && \

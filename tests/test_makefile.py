@@ -96,5 +96,6 @@ def test_test_target_does_not_ssh_or_load_env() -> None:
     assert comment
     assert prereqs == ""
     assert "ssh" not in recipe
-    assert ".env" not in recipe
-    assert "pytest" in recipe
+    assert "uv run --no-env-file pytest" in recipe
+    assert "source" not in recipe
+    assert ".env" not in recipe.replace("--no-env-file", "")
