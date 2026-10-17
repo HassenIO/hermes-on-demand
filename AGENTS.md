@@ -1,4 +1,4 @@
-# Hermes agent instructions
+# Hermes agents instructions
 
 This repo is **infrastructure-as-code** for [Nous Research Hermes Agent](https://hermes-agent.nousresearch.com/) on an Ubuntu VPS. The local machine (this checkout) is the **control plane only**. Hermes, the gateway, Docker sandboxes, and Firecrawl run **only on the VPS**.
 
