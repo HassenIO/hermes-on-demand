@@ -135,6 +135,7 @@ SKIP_FIRECRAWL=1 SKIP_MNEMOSYNE=1 SKIP_AGENT_REACH=1 make deploy
 - [Discord gateway](docs/07-discord-gateway.md)
 - [Skills catalog](docs/08-skills.md) — custom skills + links to `SKILL.md`
 - [S3 snapshots](docs/09-s3-snapshots.md) — skills + cron mirror
+- [Deployment testing](docs/10-deployment-testing.md) — disposable VPS, test bot, health, Telegram smoke test
 - [Content generation](docs/content-generation.md) — long-form pipeline
 - [Tools](docs/tools/README.md) — Firecrawl/SearXNG, Mnemosyne, Agent-Reach, Notion, memory profile
 - [Troubleshooting](docs/troubleshooting.md)

@@ -1,6 +1,6 @@
 # Deploy (local machine → VPS)
 
-Primary path: fill `.env` on the local machine, then run **one** full deploy. Hermes is installed **only on the VPS**.
+Primary path: fill `.env` on the local machine, then run **one** full deploy. Hermes is installed **only on the VPS**. To prove that path on a disposable host, without reusing the production bot token, see [10-deployment-testing](10-deployment-testing.md).
 
 ## Golden path (new VPS)
 
