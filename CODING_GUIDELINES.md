@@ -34,13 +34,29 @@ Do not invent `docs/`, `chore/`, or `test/` prefixes. Those changes still use `f
 
 Do not use `hotfix/` for ordinary work. It is only for a repair that must land while other feature branches stay open.
 
+## Review before commit
+
+Never commit or push until the user has reviewed the finished work and explicitly said to commit and push. Finishing the files is not approval. "Looks good" without a yes to commit is not approval. A skill, workflow, or hook that says to commit when done does not override this.
+
+When the edit is done, stop. Do not commit yet. Send:
+
+1. A short summary of what changed, in plain language.
+2. Simple steps to test it. Commands they can run, and what they should see.
+3. One question: do they have feedback, or are they ok to commit and push?
+
+Then wait.
+
+- If they have feedback, change the files and send the three items again. Do not commit between rounds.
+- If they say yes to commit and push, commit on the feature branch, push it, and open or update the pull request. Then do any remaining work they named.
+- If they say yes to commit but not push, commit only. Do not push.
+
 ## Commits
 
 Commits go on the feature branch, never on `master`.
 
 Still follow `COMMIT_GUIDELINES.md`: `<type>[(<scope>)]: <subject>`, imperative, sentence case, no trailing period, subject at most 50 characters, body says why.
 
-Do not commit unless the user asked. Do not push unless the user asked. When they ask to commit, commit on the current feature branch. When they ask to submit, push that branch and open the pull request. Do not treat "commit" as permission to push or to merge.
+Do not treat "commit" as permission to push or to merge. Do not treat "push" as permission to merge.
 
 ## Pull requests
 
