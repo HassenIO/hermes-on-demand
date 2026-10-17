@@ -53,6 +53,10 @@ export function checksFailed(lint, test) {
   return lint !== "success" || test !== "success";
 }
 
+export function writeDenied(status) {
+  return status === 403;
+}
+
 function api(token, path, options = {}) {
   return fetch(`https://api.github.com${path}`, {
     ...options,
@@ -71,6 +75,7 @@ async function upsertComment(token, repo, number, body) {
     `/repos/${repo}/issues/${number}/comments?per_page=100`,
   );
   if (!list.ok) {
+    if (writeDenied(list.status)) return "skipped";
     throw new Error(`list comments failed: ${list.status}`);
   }
   const comments = await list.json();
@@ -81,17 +86,20 @@ async function upsertComment(token, repo, number, body) {
       body: JSON.stringify({ body }),
     });
     if (!update.ok) {
+      if (writeDenied(update.status)) return "skipped";
       throw new Error(`update comment failed: ${update.status}`);
     }
-    return;
+    return "updated";
   }
   const create = await api(token, `/repos/${repo}/issues/${number}/comments`, {
     method: "POST",
     body: JSON.stringify({ body }),
   });
   if (!create.ok) {
+    if (writeDenied(create.status)) return "skipped";
     throw new Error(`create comment failed: ${create.status}`);
   }
+  return "created";
 }
 
 async function main() {
@@ -116,7 +124,10 @@ async function main() {
     testLog: readLog("test.txt"),
     sha,
   });
-  await upsertComment(token, repo, number, body);
+  const posted = await upsertComment(token, repo, number, body);
+  if (posted === "skipped") {
+    console.error("comment skipped: token cannot write to this pull request");
+  }
   if (checksFailed(lint, test)) {
     process.exitCode = 1;
   }

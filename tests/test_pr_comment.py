@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_report_body_and_failure_flag() -> None:
     script = r"""
-import { reportBody, checksFailed, clip } from "./scripts/ci/pr-comment.mjs";
+import { reportBody, checksFailed, clip, writeDenied } from "./scripts/ci/pr-comment.mjs";
 const body = reportBody({
   lint: "success",
   test: "failure",
@@ -26,6 +26,8 @@ const result = {
   failed: checksFailed("success", "failure"),
   passed: checksFailed("success", "success"),
   empty: clip(""),
+  denied: writeDenied(403),
+  other: writeDenied(500),
 };
 process.stdout.write(JSON.stringify(result));
 """
@@ -45,4 +47,6 @@ process.stdout.write(JSON.stringify(result));
         "failed": True,
         "passed": False,
         "empty": "_no output_",
+        "denied": True,
+        "other": False,
     }
