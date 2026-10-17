@@ -139,6 +139,8 @@ SKIP_FIRECRAWL=1 SKIP_MNEMOSYNE=1 SKIP_AGENT_REACH=1 make deploy
 - [Content generation](docs/content-generation.md) — long-form pipeline
 - [Tools](docs/tools/README.md) — Firecrawl/SearXNG, Mnemosyne, Agent-Reach, Notion, memory profile
 - [Troubleshooting](docs/troubleshooting.md)
+- [Coding guidelines](CODING_GUIDELINES.md) — branches and pull requests, never commit on `master`
+- [Commit guidelines](COMMIT_GUIDELINES.md) — message format
 
 ## Layout
 
