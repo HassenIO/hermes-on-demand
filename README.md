@@ -73,6 +73,7 @@ make setup-notion     # only configures when both NOTION_* vars are in .env
 make help         # list targets
 make check-env    # confirm .env exists (no secrets printed)
 make test         # local unit tests (no .env, no SSH)
+make install-hooks # lint and test before every commit in this clone
 ```
 
 Equivalent raw entrypoint (same flags): `./scripts/deploy.sh [--config-only|…]`.

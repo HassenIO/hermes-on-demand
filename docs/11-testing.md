@@ -29,7 +29,7 @@ Cron jobs need a unique `id`. Names are not required to be unique. Do not add th
 
 Run `make test` before a feature that touches those functions, the cron validator, or the pin decision. If the decision changes, extend `tests/` in the same change. Do not weaken or skip a test to land the feature.
 
-`make lint` is `bash -n` on every script under `scripts/`. Every pull request push runs `make lint` and `make test` in `.github/workflows/pr-checks.yml`. The comment is written by `scripts/ci/pr-comment.mjs`. Do not paste that logic back into the workflow. Do not add deployment, health, or network tests to that workflow.
+`make lint` is `bash -n` on every script under `scripts/`. Run `make install-hooks` once per clone. After that, `git commit` runs `make lint` and `make test` and stops if either fails. Do not pass `--no-verify` to skip it. Every pull request push also runs both in `.github/workflows/pr-checks.yml`. The comment is written by `scripts/ci/pr-comment.mjs`. Do not paste that logic back into the workflow. Do not add deployment, health, or network tests to that workflow.
 
 ## Out of scope
 
