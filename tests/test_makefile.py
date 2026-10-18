@@ -99,6 +99,24 @@ def test_lint_target_is_bash_n_only() -> None:
     assert "uv " not in recipe
 
 
+def test_install_hooks_sets_hooks_path_only() -> None:
+    text = (ROOT / "Makefile").read_text()
+    _phony, targets = parse_makefile(text)
+    _comment, recipe, prereqs = targets["install-hooks"]
+    assert prereqs == ""
+    assert "core.hooksPath .githooks" in recipe
+    assert "deploy" not in recipe
+    assert "ssh" not in recipe
+    assert "source" not in recipe
+    hook = (ROOT / ".githooks" / "pre-commit").read_text()
+    script = (ROOT / "scripts" / "pre-commit.sh").read_text()
+    assert "scripts/pre-commit.sh" in hook
+    assert "make lint" in script
+    assert "make test" in script
+    assert "ssh" not in script
+    assert ".env" not in script
+
+
 def test_test_target_does_not_ssh_or_load_env() -> None:
     text = (ROOT / "Makefile").read_text()
     _phony, targets = parse_makefile(text)

@@ -56,3 +56,5 @@ Infrastructure-as-code for Nous Research Hermes Agent on an Ubuntu VPS. This che
 - Do not run `hermes doctor --fix` to repair a broken `hermes` command. It can loop the `~/.local/bin/hermes` symlink. `make push-config` relinks it.
 
 <!-- /bmad:context -->
+
+Run `make install-hooks` once per clone. A commit then refuses to proceed unless `make lint` and `make test` pass. Do not use `git commit --no-verify` to skip that gate.

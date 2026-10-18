@@ -107,6 +107,5 @@ pre-SSH error strings so a later edit cannot drift them.
 1. The user reviewed the summary and test steps, and explicitly said to commit. `git branch --show-current` is not `master`. If it is `master`, follow `CODING_GUIDELINES.md` before committing.
 2. The subject matches a type above and is within 50 characters.
 3. The body says why, if the subject does not.
-4. `bash -n` passed on every edited shell script.
-5. `make test` passed. A script behavior change is not ready without it, alongside `bash -n`. Do not weaken or skip tests to make a commit pass.
-6. The diff has no secrets and no runtime copies under `skills/`, `cron/`, or `artifacts/`.
+4. `make lint` and `make test` passed. After `make install-hooks`, the pre-commit hook runs both and refuses the commit if either fails. Do not use `git commit --no-verify` to skip that gate. Do not weaken or skip tests to make a commit pass.
+5. The diff has no secrets and no runtime copies under `skills/`, `cron/`, or `artifacts/`.
