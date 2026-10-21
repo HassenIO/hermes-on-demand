@@ -109,6 +109,8 @@ What the green check does not prove: lint and unit tests do not read secrets and
 
 **[ASSUMPTION] The job writes a mode-600 `.env` from that environment's secrets, then runs `make deploy`.** Secret names match the variable names, so there is no second mapping two stories could invent. The exception is the SSH private key: secret `SSH_PRIVATE_KEY`, written to a temp file, passed as `SSH_IDENTITY_FILE`. `SSH_*` is already stripped by the filter, so the key does not enter the runtime env.
 
+Correction, 2026-10-21: GitHub forbids a secret name that starts with `GITHUB_`. The Environment secret is `AGENT_GITHUB_TOKEN`, written into the dotenv file as `GITHUB_TOKEN`. The laptop `.env` still uses `GITHUB_TOKEN`. The ambient runner token is always cleared. It is never the agent token.
+
 The job never loads both secret sets. It never takes a host input. `ALLOW_LOCAL_TARGET` and `PIN_CRON_FORCE` are unset. Each environment has its own bot token and its own `S3_PREFIX`.
 
 `scp_cmd` in `deploy.sh` does not set `BatchMode` or `StrictHostKeyChecking`. `ssh_cmd` does. A password or host-key prompt hangs a runner. **[ASSUMPTION]** That transport is fixed to the same non-interactive policy before the click is real. It does not need to happen on the agent host first. Known-host policy stays `accept-new`, which is already the deploy SSH policy. No pinned `known_hosts` unless you ask.
@@ -124,6 +126,8 @@ The job never loads both secret sets. It never takes a host input. `ALLOW_LOCAL_
 This preflight does not stop prod secrets from pointing at the sandbox host. That host has a venv. The control against that is: no host input, and the two secret sets are never in one job. Pointing prod at the wrong host is an operator error in the GitHub Environment, same class as a bad laptop `.env`, and it is no longer a forgotten `TARGET_HOST` in a shared file.
 
 The click does not call `skills-push`, `cron-push`, or seed push. Those trees are not in the checkout. **[ASSUMPTION]**
+
+Correction, 2026-10-21: a fresh host still needs a non-empty `USER.md` or health fails. The sandbox Environment holds that text as `USER_MD`. The workflow writes `artifacts/USER.md` before `make deploy`. The existing artifact install path copies it. An empty secret refuses the sandbox click. Prod may omit it, and an omitted file does not erase the remote seed.
 
 ## Fork 5 — destroy
 

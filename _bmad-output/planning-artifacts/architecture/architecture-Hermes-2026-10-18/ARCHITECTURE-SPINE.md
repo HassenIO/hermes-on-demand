@@ -7,7 +7,7 @@ paradigm: push-model configuration management
 scope: Hermes control plane, including unbuilt click-gated CD
 status: final
 created: 2026-10-18
-updated: 2026-10-19
+updated: 2026-10-21
 binds:
   - FR-1
   - FR-2
@@ -94,7 +94,7 @@ flowchart TD
 
 - **Binds:** FR-3, FR-24, FR-25
 - **Prevents:** a job that holds both secret sets, a host input, an environment-name input, or a workflow-hardcoded snapshot prefix
-- **Rule:** The runner writes one mode-600 `$ROOT/.env` from exactly one GitHub Environment, then runs `make deploy`. The workflow lists every name in `.env.sample` that `deploy.sh` or `build_runtime_env` reads, under the same name. A name is omitted only when that Environment secret is unset. It is not a required-only subset. `ALLOW_LOCAL_TARGET` and `PIN_CRON_FORCE` stay unset even if stored. The only rename is `SSH_PRIVATE_KEY`, written to a temp file and passed as `SSH_IDENTITY_FILE`. No host input. No environment-name input. Before `make deploy`, unset the ambient runner `GITHUB_TOKEN` unless that name is a secret in the one Environment in use. Do not forward the runner token. The laptop path still reads a hand-written `$ROOT/.env`. CD does not read it.
+- **Rule:** The runner writes one mode-600 `$ROOT/.env` from exactly one GitHub Environment, then runs `make deploy`. The workflow lists every name in `.env.sample` that `deploy.sh` or `build_runtime_env` reads, under the same name. A name is omitted only when that Environment secret is unset. It is not a required-only subset. `ALLOW_LOCAL_TARGET` and `PIN_CRON_FORCE` stay unset even if stored. Two renames, both only in the CD materialiser. `SSH_PRIVATE_KEY` is written to a temp file and passed as `SSH_IDENTITY_FILE`. `AGENT_GITHUB_TOKEN` is written into the dotenv file as `GITHUB_TOKEN`. GitHub forbids a secret name that starts with `GITHUB_`, so the Environment cannot hold `GITHUB_TOKEN`. The laptop `.env` still uses `GITHUB_TOKEN`. Always unset the ambient runner `GITHUB_TOKEN` before writing the file and before `make deploy`. The runner token never enters the dotenv file. No host input. No environment-name input. The laptop path still reads a hand-written `$ROOT/.env`. CD does not read it.
 
 ### AD-4 — Gates live in repository settings
 
@@ -112,13 +112,13 @@ flowchart TD
 
 - **Binds:** FR-18, FR-24, FR-25
 - **Prevents:** a prod click calling `make update` or `--config-only`, `deploy.sh` learning environment names, or a prod click bootstrapping an empty host
-- **Rule:** Both clicks run `make deploy` and nothing else. They do not call `skills-push`, `cron-push`, or seed push. Before `make deploy`, the prod workflow SSHes as `TARGET_USER` from the materialised env, with `SSH_IDENTITY_FILE`, `SSH_PORT` defaulting to 22, and the AD-16 options. It does not call `make ssh`. It refuses unless remote `test -x` succeeds for `/usr/local/lib/hermes-agent/venv/bin/hermes` or for `~/.hermes/hermes-agent/venv/bin/hermes` expanded by that remote account. The sandbox workflow does not run this preflight. The preflight is not inside `deploy.sh`. First prod stand-up stays the laptop exception.
+- **Rule:** Both clicks run `make deploy` and nothing else. They do not call `skills-push`, `cron-push`, or seed push. Before `make deploy`, the prod workflow SSHes as `TARGET_USER` from the materialised env, with `SSH_IDENTITY_FILE`, `SSH_PORT` defaulting to 22, and the AD-16 options. It does not call `make ssh`. It refuses unless remote `test -x` succeeds for `/usr/local/lib/hermes-agent/venv/bin/hermes` or for `~/.hermes/hermes-agent/venv/bin/hermes` expanded by that remote account. The sandbox workflow does not run this preflight. The preflight is not inside `deploy.sh`. First prod stand-up stays the laptop exception. A sandbox click writes a non-empty Environment secret `USER_MD` to `artifacts/USER.md` in that workspace, mode 600, before `make deploy`. The existing artifact install path copies it. An unset or empty `USER_MD` refuses the sandbox click before deploy and does not write an empty file. Prod may omit `USER_MD`. If omitted, the workflow does not write `artifacts/USER.md`, so the remote seed stays. The click still does not call seed push.
 
 ### AD-7 — No destroy and no provisioner [ADOPTED]
 
 - **Binds:** FR-24
 - **Prevents:** a destroy-prod target, a VPS provisioner, or a required wipe command for the environment sandbox
-- **Rule:** This repo does not create, destroy, or resize agent hosts. Wiping the environment sandbox is an operator action outside the repo. The next sandbox click bootstraps whatever host the sandbox secrets point at. Prod has no destroy path.
+- **Rule:** This repo does not create, destroy, or resize agent hosts. Wiping the environment sandbox is an operator action outside the repo. The next sandbox click bootstraps whatever host the sandbox secrets point at. A fresh host has no profile seed in git. That seed comes from the `USER_MD` secret in AD-6, not from the host arriving pre-seeded. Prod has no destroy path.
 
 ### AD-8 — One runtime-env writer [ADOPTED]
 
@@ -136,7 +136,7 @@ flowchart TD
 
 - **Binds:** FR-12, FR-18, FR-19
 - **Prevents:** a CD or update path that calls bare `hermes update`, or a health path that uploads a new patch
-- **Rule:** Bootstrap, config push, and control-plane upgrade reapply `scripts/remote/patch-hermes-docker.sh`. Config push and control-plane upgrade restart the gateway. Bootstrap and each extension up script also restart the gateway after their own writes. A new extension up script does the same. Do not add a second end-of-deploy restart. The relink target is the first of the two AD-6 venv paths that exists, in the order AD-6 writes them. Config push and bootstrap use that order. Health may keep its existing fallback to `/usr/local/bin/hermes` only when neither venv path exists. That fallback is not a venv binary and is not a prod-preflight path. Health reapplies the patch only when the marker is missing, from the copy already on the host, and does not upload a payload. Bare `hermes update` and `hermes doctor --fix` are not repair paths. Control-plane upgrade refreshes Mnemosyne, Agent-Reach, or Notion only when that piece is already present. It does not install a piece that was never set up. The control plane cannot stop an SSH session that runs bare `hermes update` anyway.
+- **Rule:** Bootstrap, config push, and control-plane upgrade reapply `scripts/remote/patch-hermes-docker.sh`. Config push and control-plane upgrade restart the gateway. Bootstrap and each extension up script also restart the gateway after their own writes. A new extension up script does the same. Do not add a second end-of-deploy restart. Bootstrap's `_link_hermes_cli` selects the first executable of the two AD-6 venv paths, in that order, and links it. Config push does not. It links `~/.local/bin/hermes` only to `/usr/local/lib/hermes-agent/venv/bin/hermes`, and only when that path is a symlink or missing. `ln -sfn` succeeds even when the target is absent, so the `|| true` does not select the user-local venv. On a user-local-only install, config push can replace a working symlink with a dangling one. Health repairs a symlink only when `readlink -f` fails. It tries the system venv path, then `/usr/local/bin/hermes` if that `ln` fails. It never selects the user-local venv. That fallback is `ln` failing, not the target being absent. Do not describe this as a completed two-path repair. A later fix must use bootstrap's check and must not add a third venv path. A CD story does not change the relink. Health reapplies the patch only when the marker is missing, from the copy already on the host, and does not upload a payload. Bare `hermes update` and `hermes doctor --fix` are not repair paths. Control-plane upgrade refreshes Mnemosyne, Agent-Reach, or Notion only when that piece is already present. It does not install a piece that was never set up. The control plane cannot stop an SSH session that runs bare `hermes update` anyway.
 
 ### AD-11 — Loopback extract and a closed forward list [ADOPTED]
 
@@ -279,6 +279,7 @@ Interim rule on every row: do not implement the open choice inside a CD story. T
 | Open Question 6, load `registry.yaml` | Nothing reads it. The case and the Make target already register an extension. | Do not add a loader. |
 | Per-workflow actor allowlist | Not confirmed available on this personal public repo. Write access is the dispatch gate. | Do not add one. |
 | Pinned `known_hosts` | Deploy SSH already uses `accept-new`. | Do not add a pin. |
+| Unify relink onto bootstrap's two-path check | Config push and health do not do that check today. Fixing it inside a CD story would fork the repair. | Do not change the relink in a CD story. |
 | Native pull-request deploy button | Requires a queued job. The adopted click is dispatch plus a comment line. | Do not queue a deploy from `pr-checks.yml`. |
 | Voice behavior, other gateways, other model providers | Voice keys may already be forwarded. Behavior is unspecified. Other gateways and providers are out of the PRD. | Do not specify voice behavior. Do not stop forwarding a voice key that is set. Do not add another gateway or provider. |
 | Firewall, fail2ban, spend watch, webhook mTLS | Non-goals. The control plane does not watch spend and does not size the VPS. | Do not add them. |
