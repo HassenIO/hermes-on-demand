@@ -27,7 +27,8 @@ ssh-add -l                    # SSH key in agent
    - Pre-pull Docker terminal image
 3. **Firecrawl lite** on `127.0.0.1:3002` (opt out: `SKIP_FIRECRAWL=1`)
 4. **Mnemosyne** side-venv + Hermes wrapper plugin (opt out: `SKIP_MNEMOSYNE=1`)
-5. **healthcheck** (re-applies Docker patch if missing after upgrades)
+5. **S3 restore** when all four `AWS_*`/`S3_BUCKET` vars are set — pulls custom skills + `cron/jobs.json` back down, only if the host has no job set yet ([09-s3-snapshots](09-s3-snapshots.md))
+6. **healthcheck** (re-applies Docker patch if missing after upgrades)
 
 ### After first deploy (Telegram)
 

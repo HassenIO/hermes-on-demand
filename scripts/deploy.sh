@@ -281,6 +281,12 @@ else
   log "Skipping Notion (set both NOTION_API_KEY and NOTION_REPORTS_PARENT_PAGE_ID to enable)"
 fi
 
+if [[ -n "${S3_BUCKET:-}" && -n "${AWS_ACCESS_KEY_ID:-}" && -n "${AWS_SECRET_ACCESS_KEY:-}" && -n "${AWS_DEFAULT_REGION:-}" ]]; then
+  log "Restoring S3 backup (custom skills + cron) into fresh install"
+  ssh_cmd "bash '$REMOTE_DIR/scripts/remote/s3-restore.sh'" \
+    || warn "S3 restore failed — re-run ./scripts/deploy.sh after checking AWS_* / S3_BUCKET"
+fi
+
 if docker_runtime_requested; then
   log "Starting Hermes gateway container (opt-in; host unit is not started)"
 fi

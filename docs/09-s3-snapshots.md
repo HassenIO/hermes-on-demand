@@ -85,9 +85,25 @@ Uploads use `--sse AES256`. A VPS `AWS_PROFILE` is unset for the snapshot proces
 
 Incomplete AWS/S3 env stops the unit instead of leaving it crash-looping.
 
+## Restore (fresh install)
+
+A fresh `make deploy` with all four AWS/S3 variables set pulls the mirror back down after the extensions install and before the final gateway refresh and healthcheck. On the default host path, bootstrap has already started `hermes-gateway`, so the restored skills and cron jobs land while the host gateway is already running. With `HERMES_DOCKER_RUNTIME=1`, the container starts after the restore. The step is `scripts/remote/s3-restore.sh`, add-only:
+
+- Runs only when `~/.hermes/cron/jobs.json` does not exist yet (fresh install). An existing job set is never overwritten.
+- `cron/jobs.json` installs through the same installer as `make cron-push` (host python first, else the gateway container).
+- `skills/` merges over `~/.hermes/skills/` with no `--prune`: mirrored custom skills are added or refreshed, local-only packages survive.
+- Unpinned jobs are then pinned to `model.default`, same rule as `push-config`.
+- Missing bucket objects only warn. The step never deletes local state.
+
+Re-run it by hand:
+
+```bash
+ssh TARGET_HOST 'bash ~/hermes-setup/scripts/remote/s3-restore.sh'
+```
+
 ## Limits
 
 - One writer. Do not run two gateways or two watchers against the same prefix.
-- This does not restore a new VPS. It only pushes. Memory stays on the current disk.
+- Memory stays on the current disk. Restore covers only what the snapshot uploads: custom skills and `cron/jobs.json` — never SQLite, sessions, logs, or secrets.
 - Local `make skills-push` / `make cron-push` overwrite the VPS, and the watcher then publishes that overwrite. A stale local copy can still replace S3.
 - Not a continuous byte-level sync. A burst of writes becomes one upload after the debounce.

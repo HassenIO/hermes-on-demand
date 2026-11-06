@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Runs ON the VPS. Stage custom skills + cron/jobs.json and mirror them to S3.
 # Does not upload SQLite, sessions, logs, or secrets.
+# Counterpart restore (fresh install only): s3-restore.sh
 # Requires AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION, S3_BUCKET
 # in the payload remote.env (or ~/.hermes/.env). Optional S3_PREFIX.
 set -euo pipefail
