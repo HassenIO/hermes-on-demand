@@ -57,3 +57,26 @@ expand_tilde() {
     printf '%s\n' "$p"
   fi
 }
+
+# True when container hermes is running. Inspect failure means it is not.
+hermes_container_running() {
+  local running
+  running="$(docker inspect -f '{{.State.Running}}' hermes 2>/dev/null)" || return 1
+  [[ "$running" == "true" ]]
+}
+
+# Stopped still counts: restart unless-stopped would bring it back beside the unit.
+hermes_container_present() {
+  docker inspect hermes >/dev/null 2>&1
+}
+
+# Host gateway start. Refuses while container hermes exists (one writer).
+start_host_gateway() {
+  if hermes_container_running; then
+    die "refusing to start host gateway while container hermes is running"
+  fi
+  if hermes_container_present; then
+    die "refusing to start host gateway while container hermes exists"
+  fi
+  hermes gateway restart 2>/dev/null || hermes gateway start
+}

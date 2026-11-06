@@ -7,6 +7,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/lib/common.sh"
 # shellcheck source=lib/runtime-env.sh
 source "$ROOT/scripts/lib/runtime-env.sh"
+# shellcheck source=lib/hermes-docker.sh
+source "$ROOT/scripts/lib/hermes-docker.sh"
 
 MODE="full" # full | config-only | health | firecrawl | artifacts | update | mnemosyne | agent-reach | notion | s3-snapshot
 for arg in "$@"; do
@@ -34,6 +36,9 @@ Usage: ./scripts/deploy.sh [--config-only|--health|--firecrawl|--artifacts|--upd
   --notion       Notion REST CLI + skill (install skipped unless BOTH NOTION_* are set; payload sync and timezone still run)
   --update       hermes update + Docker patch + Mnemosyne + Agent-Reach + Notion refresh
   --s3-snapshot  Mirror custom skills + cron/jobs.json to S3 (no gateway restart)
+
+  HERMES_DOCKER_RUNTIME=1 selects the official-image gateway (opt-in).
+  Unset, the host venv and hermes-gateway stay the writer. The flag is not forwarded.
 EOF
       exit 0
       ;;
@@ -88,7 +93,7 @@ if [[ "$MODE" == "health" ]]; then
 fi
 
 log "Syncing payload to VPS"
-ssh_cmd "mkdir -p '$REMOTE_DIR/scripts/lib' '$REMOTE_DIR/scripts/remote' '$REMOTE_DIR/config' '$REMOTE_DIR/firecrawl' '$REMOTE_DIR/artifacts' '$REMOTE_DIR/extensions'"
+ssh_cmd "mkdir -p '$REMOTE_DIR/scripts/lib' '$REMOTE_DIR/scripts/remote' '$REMOTE_DIR/config' '$REMOTE_DIR/firecrawl' '$REMOTE_DIR/artifacts' '$REMOTE_DIR/extensions' '$REMOTE_DIR/docker/hermes'"
 
 # Prefer rsync if available both sides
 if command -v rsync >/dev/null 2>&1 && ssh_cmd "command -v rsync >/dev/null 2>&1"; then
@@ -112,6 +117,8 @@ if command -v rsync >/dev/null 2>&1 && ssh_cmd "command -v rsync >/dev/null 2>&1
     rsync -az -e "$RSYNC_SSH" \
       "$ROOT/extensions/" "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/extensions/"
   fi
+  rsync -az -e "$RSYNC_SSH" \
+    "$ROOT/docker/hermes/" "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/docker/hermes/"
 else
   scp_cmd -r "$ROOT/scripts/lib/"* "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/scripts/lib/"
   scp_cmd -r "$ROOT/scripts/remote/"* "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/scripts/remote/"
@@ -133,6 +140,8 @@ else
     scp_cmd -r "$ROOT/extensions/"* \
       "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/extensions/" 2>/dev/null || true
   fi
+  scp_cmd "$ROOT/docker/hermes/docker-compose.yml" \
+    "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/docker/hermes/"
 fi
 
 scp_cmd "$RUNTIME_ENV" "${TARGET_USER}@${TARGET_HOST}:${REMOTE_DIR}/remote.env"
@@ -154,21 +163,21 @@ fi
 
 if [[ "$MODE" == "firecrawl" ]]; then
   log "Deploying self-hosted Firecrawl + wiring Hermes (mode=${FIRECRAWL_MODE:-lite})"
-  ssh_cmd "FIRECRAWL_MODE='${FIRECRAWL_MODE:-lite}' bash '$REMOTE_DIR/scripts/remote/firecrawl-up.sh'"
+  ssh_cmd "$(with_docker_runtime_flag "FIRECRAWL_MODE='${FIRECRAWL_MODE:-lite}' bash '$REMOTE_DIR/scripts/remote/firecrawl-up.sh'")"
   log "Firecrawl deploy done. Ask the bot to scrape a URL."
   exit 0
 fi
 
 if [[ "$MODE" == "mnemosyne" ]]; then
   log "Installing/refreshing Mnemosyne (side-venv + wrapper)"
-  ssh_cmd "MNEMOSYNE_PROFILE='${MNEMOSYNE_PROFILE:-embeddings}' bash '$REMOTE_DIR/scripts/remote/mnemosyne-up.sh'"
+  ssh_cmd "$(with_docker_runtime_flag "MNEMOSYNE_PROFILE='${MNEMOSYNE_PROFILE:-embeddings}' bash '$REMOTE_DIR/scripts/remote/mnemosyne-up.sh'")"
   log "Mnemosyne done. /new in Telegram, then hermes memory status."
   exit 0
 fi
 
 if [[ "$MODE" == "agent-reach" ]]; then
   log "Installing Agent-Reach (custom terminal image + Hermes skill)"
-  ssh_cmd "AGENT_REACH_REF='${AGENT_REACH_REF:-main}' bash '$REMOTE_DIR/scripts/remote/agent-reach-up.sh'"
+  ssh_cmd "$(with_docker_runtime_flag "AGENT_REACH_REF='${AGENT_REACH_REF:-main}' bash '$REMOTE_DIR/scripts/remote/agent-reach-up.sh'")"
   log "Agent-Reach done. /new in Telegram, then try a YouTube or GitHub URL."
   exit 0
 fi
@@ -182,7 +191,7 @@ if [[ "$MODE" == "notion" ]]; then
     exit 0
   fi
   log "Installing Notion REST CLI + notion-reports skill"
-  ssh_cmd "REMOTE_ENV='$REMOTE_DIR/remote.env' bash '$REMOTE_DIR/scripts/remote/notion-up.sh'"
+  ssh_cmd "$(with_docker_runtime_flag "REMOTE_ENV='$REMOTE_DIR/remote.env' bash '$REMOTE_DIR/scripts/remote/notion-up.sh'")"
   log "Notion done. /new in Telegram, then ask to post a test report."
   exit 0
 fi
@@ -190,14 +199,14 @@ fi
 if [[ "$MODE" == "artifacts" ]]; then
   log "Installing artifacts (SOUL.md + USER.md) on VPS"
   ssh_cmd "bash '$REMOTE_DIR/scripts/remote/install-artifacts.sh'"
-  ssh_cmd "export PATH=\"\$HOME/.local/bin:/usr/local/bin:\$PATH\"; hermes gateway restart 2>/dev/null || hermes gateway start 2>/dev/null || true"
+  gateway_refresh_ssh "$REMOTE_DIR" "export PATH=\"\$HOME/.local/bin:/usr/local/bin:\$PATH\"; source '$REMOTE_DIR/scripts/lib/common.sh'; source '$REMOTE_DIR/scripts/lib/hermes-docker.sh'; start_host_gateway"
   log "Artifacts applied. Start a new Telegram chat (/new) so the profile reloads."
   exit 0
 fi
 
 if [[ "$MODE" == "update" ]]; then
   log "Remote Hermes update + repair (Docker patch, links, gateway)"
-  ssh_cmd "bash '$REMOTE_DIR/scripts/remote/hermes-update.sh'"
+  ssh_cmd "$(with_docker_runtime_flag "bash '$REMOTE_DIR/scripts/remote/hermes-update.sh'")"
   ssh_cmd "bash '$REMOTE_DIR/scripts/remote/healthcheck.sh'"
   log "Update complete."
   exit 0
@@ -214,20 +223,17 @@ install -m 600 '$REMOTE_DIR/remote.env' "\$HERMES_HOME/.env"
 install -m 644 '$REMOTE_DIR/config/config.yaml.example' "\$HERMES_HOME/config.yaml"
 bash '$REMOTE_DIR/scripts/remote/install-artifacts.sh'
 bash '$REMOTE_DIR/scripts/remote/patch-hermes-docker.sh' 2>/dev/null || true
-# keep hermes CLI symlink healthy (doctor --fix can create a loop)
 if [[ -L "\$HOME/.local/bin/hermes" ]] || [[ ! -e "\$HOME/.local/bin/hermes" ]]; then
   mkdir -p "\$HOME/.local/bin"
   ln -sfn /usr/local/lib/hermes-agent/venv/bin/hermes "\$HOME/.local/bin/hermes" 2>/dev/null || true
 fi
-hermes gateway restart 2>/dev/null || hermes gateway start
-hermes gateway status || true
-# Pin cron jobs to model.default (skip a different explicit model; avoid drift_skip)
-bash '$REMOTE_DIR/scripts/remote/pin-cron-models.sh' || true
 EOF
+  gateway_refresh_ssh "$REMOTE_DIR" "export PATH=\"\$HOME/.local/bin:/usr/local/bin:\$PATH\"; source '$REMOTE_DIR/scripts/lib/common.sh'; source '$REMOTE_DIR/scripts/lib/hermes-docker.sh'; start_host_gateway; hermes gateway status || true"
+  ssh_cmd "bash '$REMOTE_DIR/scripts/remote/pin-cron-models.sh'" || true
   # Re-apply Notion if both keys present (config.yaml.example has no mcp/notion blocks)
   if [[ -n "${NOTION_API_KEY:-}" && -n "${NOTION_REPORTS_PARENT_PAGE_ID:-}" ]]; then
     log "Re-applying Notion after config push"
-    ssh_cmd "bash '$REMOTE_DIR/scripts/remote/notion-up.sh'" || warn "Notion re-apply failed"
+    ssh_cmd "$(with_docker_runtime_flag "bash '$REMOTE_DIR/scripts/remote/notion-up.sh'")" || warn "Notion re-apply failed"
     # notion-up may rewrite config.yaml — re-pin cron models
     ssh_cmd "bash '$REMOTE_DIR/scripts/remote/pin-cron-models.sh'" || warn "cron pin after notion failed"
   fi
@@ -237,12 +243,12 @@ EOF
 fi
 
 log "Full remote bootstrap (this may take several minutes)"
-ssh_cmd "bash '$REMOTE_DIR/scripts/remote/bootstrap.sh'"
+ssh_cmd "$(with_docker_runtime_flag "bash '$REMOTE_DIR/scripts/remote/bootstrap.sh'")"
 
 # Default stack includes Firecrawl lite (small VPS). Opt out: SKIP_FIRECRAWL=1
 if [[ "${SKIP_FIRECRAWL:-}" != "1" ]]; then
   log "Starting Firecrawl lite (SKIP_FIRECRAWL=1 to skip)"
-  ssh_cmd "FIRECRAWL_MODE='${FIRECRAWL_MODE:-lite}' bash '$REMOTE_DIR/scripts/remote/firecrawl-up.sh'" \
+  ssh_cmd "$(with_docker_runtime_flag "FIRECRAWL_MODE='${FIRECRAWL_MODE:-lite}' bash '$REMOTE_DIR/scripts/remote/firecrawl-up.sh'")" \
     || warn "Firecrawl setup failed — Hermes gateway may still work; re-run ./scripts/deploy.sh --firecrawl"
 else
   log "Skipping Firecrawl (SKIP_FIRECRAWL=1)"
@@ -251,7 +257,7 @@ fi
 # Default stack includes Mnemosyne (side-venv survives hermes update). Opt out: SKIP_MNEMOSYNE=1
 if [[ "${SKIP_MNEMOSYNE:-}" != "1" ]]; then
   log "Installing Mnemosyne memory provider (SKIP_MNEMOSYNE=1 to skip)"
-  ssh_cmd "MNEMOSYNE_PROFILE='${MNEMOSYNE_PROFILE:-embeddings}' bash '$REMOTE_DIR/scripts/remote/mnemosyne-up.sh'" \
+  ssh_cmd "$(with_docker_runtime_flag "MNEMOSYNE_PROFILE='${MNEMOSYNE_PROFILE:-embeddings}' bash '$REMOTE_DIR/scripts/remote/mnemosyne-up.sh'")" \
     || warn "Mnemosyne setup failed — re-run ./scripts/deploy.sh --mnemosyne"
 else
   log "Skipping Mnemosyne (SKIP_MNEMOSYNE=1)"
@@ -260,7 +266,7 @@ fi
 # Default stack includes Agent-Reach (custom Docker terminal image + skill). Opt out: SKIP_AGENT_REACH=1
 if [[ "${SKIP_AGENT_REACH:-}" != "1" ]]; then
   log "Installing Agent-Reach (SKIP_AGENT_REACH=1 to skip)"
-  ssh_cmd "AGENT_REACH_REF='${AGENT_REACH_REF:-main}' bash '$REMOTE_DIR/scripts/remote/agent-reach-up.sh'" \
+  ssh_cmd "$(with_docker_runtime_flag "AGENT_REACH_REF='${AGENT_REACH_REF:-main}' bash '$REMOTE_DIR/scripts/remote/agent-reach-up.sh'")" \
     || warn "Agent-Reach setup failed — re-run ./scripts/deploy.sh --agent-reach"
 else
   log "Skipping Agent-Reach (SKIP_AGENT_REACH=1)"
@@ -269,11 +275,16 @@ fi
 # Notion only when both env vars are set (omit either → skip)
 if [[ -n "${NOTION_API_KEY:-}" && -n "${NOTION_REPORTS_PARENT_PAGE_ID:-}" ]]; then
   log "Installing Notion (both NOTION_API_KEY and NOTION_REPORTS_PARENT_PAGE_ID set)"
-  ssh_cmd "bash '$REMOTE_DIR/scripts/remote/notion-up.sh'" \
+  ssh_cmd "$(with_docker_runtime_flag "bash '$REMOTE_DIR/scripts/remote/notion-up.sh'")" \
     || warn "Notion setup failed — re-run ./scripts/deploy.sh --notion"
 else
   log "Skipping Notion (set both NOTION_API_KEY and NOTION_REPORTS_PARENT_PAGE_ID to enable)"
 fi
+
+if docker_runtime_requested; then
+  log "Starting Hermes gateway container (opt-in; host unit is not started)"
+fi
+gateway_refresh_ssh "$REMOTE_DIR"
 
 ssh_cmd "bash '$REMOTE_DIR/scripts/remote/healthcheck.sh'"
 

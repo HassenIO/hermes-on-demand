@@ -26,6 +26,7 @@ DEPLOY_ONLY = {
     "PIN_CRON_FORCE": "1",
     "FIRECRAWL_MODE": "full",
     "LLM_MODEL": "should-not-forward",
+    "HERMES_DOCKER_RUNTIME": "1",
 }
 ABSENT_EXACT = (
     "REMOTE_DIR",
@@ -33,6 +34,7 @@ ABSENT_EXACT = (
     "PIN_CRON_FORCE",
     "FIRECRAWL_MODE",
     "LLM_MODEL",
+    "HERMES_DOCKER_RUNTIME",
     "HERMES_DISABLE_TELEGRAM",
 )
 

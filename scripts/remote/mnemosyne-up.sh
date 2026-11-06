@@ -11,6 +11,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../lib/common.sh
 source "$SCRIPT_DIR/../lib/common.sh"
+# shellcheck source=../lib/hermes-docker.sh
+source "$SCRIPT_DIR/../lib/hermes-docker.sh"
 
 export PATH="${HOME}/.local/bin:/usr/local/bin:${PATH}"
 export HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
@@ -178,7 +180,7 @@ PY
 fi
 
 log "Restarting gateway"
-hermes gateway restart 2>/dev/null || hermes gateway start 2>/dev/null || true
+refresh_gateway
 sleep 5
 
 log "Status"

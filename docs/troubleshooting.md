@@ -33,6 +33,12 @@ source ~/.bashrc
 hermes doctor
 ```
 
+## Docker runtime and the user unit
+
+If `HERMES_DOCKER_RUNTIME=1`, the gateway is container `hermes` (`nousresearch/hermes-agent`, command `gateway run`). Do not also start `hermes-gateway`. `systemctl --user start hermes-gateway` or `hermes gateway start` beside that container is a second writer. Stop one before starting the other. See [Deploy — Docker runtime](02-deploy.md#docker-runtime-opt-in).
+
+`docker logs -f hermes` is the container log. Host `hermes gateway status` is the unit, not the container. A skill path `~/.hermes/...` inside the container is `/opt/data/.hermes/...` and misses the mount.
+
 ## Gateway running but bot silent
 
 1. Token correct? Regenerate via BotFather if unsure  
@@ -92,7 +98,9 @@ sg docker -c 'hermes gateway restart'
 
 ## Gateway dies after SSH logout
 
-Linger not enabled:
+If the Docker runtime is the writer, logout does not matter: the container uses `restart: unless-stopped`, not linger. Do not `hermes gateway install` or `hermes gateway start` while container `hermes` is up.
+
+On the host-unit path, linger is missing:
 
 ```bash
 loginctl show-user "$USER" | grep Linger

@@ -12,11 +12,13 @@ DEST="$CRON_DIR/jobs.json"
 
 [[ -f "$SRC" ]] || { echo "ERROR: missing $SRC" >&2; exit 1; }
 
-# Prefer Hermes venv so `import cron.jobs` works
+# Prefer Hermes venv so `import cron.jobs` works. The image venv path is
+# included because the install script's PATH prepend hides it inside a container.
 PY=""
 for cand in \
   /usr/local/lib/hermes-agent/venv/bin/python \
   "${HERMES_HOME}/venv/bin/python" \
+  /opt/hermes/.venv/bin/python \
   "$(command -v python3 || true)"
 do
   if [[ -n "$cand" && -x "$cand" ]]; then

@@ -5,6 +5,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../lib/common.sh
 source "$SCRIPT_DIR/../lib/common.sh"
+# shellcheck source=../lib/hermes-docker.sh
+source "$SCRIPT_DIR/../lib/hermes-docker.sh"
 
 PAYLOAD_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 FC_DIR="${PAYLOAD_DIR}/firecrawl"
@@ -160,7 +162,7 @@ if command -v hermes >/dev/null 2>&1; then
   hermes config set web.backend firecrawl >/dev/null 2>&1 || true
   hermes config set web.search_backend searxng >/dev/null 2>&1 || true
   hermes config set web.extract_backend firecrawl >/dev/null 2>&1 || true
-  hermes gateway restart 2>/dev/null || hermes gateway start 2>/dev/null || true
+  refresh_gateway
 fi
 
 log "Ready:"

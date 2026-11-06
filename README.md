@@ -24,6 +24,8 @@ make deploy
 
 That installs Hermes, applies config + profile seeds, patches Docker sandbox paths, starts the gateway, and brings up Firecrawl/SearXNG, Mnemosyne, and Agent-Reach (Notion only if both `NOTION_*` vars are set).
 
+The gateway is the `hermes-gateway` user unit. Set `HERMES_DOCKER_RUNTIME=1` in `.env` only if you want the official image instead: it bind-mounts the existing `~/.hermes` at `/opt/data`, publishes no ports, and must not run beside the unit. Rollback is `docker stop` / `docker rm` (no `-v`), remove `/opt/data` only when it points at `~/.hermes`, then `systemctl --user enable hermes-gateway` and `hermes gateway start`. Inside the container, data lives at `/opt/data`, not `~/.hermes`. Mnemosyne and Agent-Reach host venvs do not run in that image. Details: [docs/02-deploy.md](docs/02-deploy.md).
+
 Then in Telegram: message the bot → optional `/sethome` → **`/new`** → chat.
 
 ---

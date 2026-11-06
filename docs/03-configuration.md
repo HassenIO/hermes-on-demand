@@ -47,6 +47,7 @@ After `make push-config`, re-run **`make cron-push`** if you changed `cron/jobs.
 | `SSH_PORT` | no | Default `22` |
 | `SSH_IDENTITY_FILE` | no | Extra `-i` key path |
 | `REMOTE_DIR` | no | Payload dir on VPS (default `~/hermes-setup`) |
+| `HERMES_DOCKER_RUNTIME` | no | Exact `1` runs the gateway from `nousresearch/hermes-agent` instead of `hermes-gateway`. Not forwarded. See [02-deploy](02-deploy.md) |
 | `HERMES_DISABLE_TELEGRAM` | no | Exact `1` omits every `TELEGRAM_*` and `HERMES_TELEGRAM_DISABLE_FALLBACK_IPS` from the runtime env (Discord-only gateway). Not forwarded. Local `.env` still needs the Telegram vars for deploy's checks. See [07-discord-gateway](07-discord-gateway.md) |
 | `TIMEZONE` | no | IANA TZ for VPS (`timedatectl`); default `Asia/Dubai`. Applied on every deploy; also written to VPS `~/.hermes/.env` as `TIMEZONE` + `TZ` |
 
