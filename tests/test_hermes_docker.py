@@ -76,7 +76,7 @@ fi
 if [ "$1" = "image" ]; then
   exit "${DOCKER_IMAGE_INSPECT_RC:-0}"
 fi
-if [ "$1" = "pull" ] || [ "$1" = "stop" ]; then
+if [ "$1" = "pull" ] || [ "$1" = "stop" ] || [ "$1" = "exec" ]; then
   exit 0
 fi
 echo "unhandled docker: $*" >&2
@@ -995,3 +995,25 @@ def test_no_host_hermes_writes_after_refresh(script: str) -> None:
     tail = text[text.rindex("refresh_gateway") :]
     for marker in ("hermes ", "$VENV/bin/", "pin-cron-models.sh"):
         assert marker not in tail, f"{script} runs {marker!r} after refresh_gateway"
+
+
+def test_run_mnemosyne_uses_container_as_owner_with_runtime_env(box: Path) -> None:
+    home = box / "home"
+    home.mkdir()
+    venv_bin = home / ".mnemosyne" / "venv" / "bin"
+    venv_bin.mkdir(parents=True)
+    write_exe(venv_bin / "mnemosyne", '#!/bin/sh\necho "host $*" >> "$STUB_LOG"\n')
+    body = 'run_mnemosyne store x\n'
+
+    up = run(source_lib(body), make_env(box / "up", HERMES_HOME=str(home), DOCKER_RUNNING="true",
+                                        STAT_UID="999", STAT_GID="976"))
+    assert up.returncode == 0, up.stderr
+    log = (box / "up" / "stub.log").read_text()
+    assert f"exec -u 999:976 --env-file {home}/.env hermes /opt/data/.mnemosyne/venv/bin/mnemosyne store x" in log
+    assert "host store" not in log
+
+    down = run(source_lib(body), make_env(box / "down", HERMES_HOME=str(home), DOCKER_RUNNING="false"))
+    assert down.returncode == 0, down.stderr
+    log = (box / "down" / "stub.log").read_text()
+    assert "host store x" in log
+    assert "exec -u" not in log
