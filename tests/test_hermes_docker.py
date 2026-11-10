@@ -985,3 +985,13 @@ def test_health_host_process_beside_container_and_stopped_container(box: Path) -
     assert stopped.returncode != 0
     assert "OK  gateway container" not in stopped.stdout
     assert "gateway status" in (box / "stopped" / "hermes.log").read_text()
+
+
+@pytest.mark.parametrize("script", ["firecrawl-up.sh", "agent-reach-up.sh", "notion-up.sh", "mnemosyne-up.sh"])
+def test_no_host_hermes_writes_after_refresh(script: str) -> None:
+    # The up script reclaims root-owned files once, at start. Root SSH runs after
+    # it leave files the container user cannot write (mnemosyne.db, cron, backups).
+    text = (ROOT / "scripts" / "remote" / script).read_text()
+    tail = text[text.rindex("refresh_gateway") :]
+    for marker in ("hermes ", "$VENV/bin/", "pin-cron-models.sh"):
+        assert marker not in tail, f"{script} runs {marker!r} after refresh_gateway"

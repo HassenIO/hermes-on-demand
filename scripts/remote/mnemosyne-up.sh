@@ -179,13 +179,14 @@ print(f"seeded {len(entries)} entries")
 PY
 fi
 
-log "Restarting gateway"
-refresh_gateway
-sleep 5
-
 log "Status"
 hermes memory status 2>&1 || true
 "$VENV/bin/mnemosyne" stats 2>&1 || true
 hermes tools list 2>&1 | grep -i mnemosyne | head -25 || true
+
+# Last host write. With HERMES_DOCKER_RUNTIME=1 the up script reclaims root-owned
+# files after start; anything run as root after it (mnemosyne.db) stays root's.
+log "Restarting gateway"
+refresh_gateway
 
 log "Mnemosyne install complete (side-venv: $VENV)"

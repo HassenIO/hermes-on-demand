@@ -39,6 +39,15 @@ If `HERMES_DOCKER_RUNTIME=1`, the gateway is container `hermes` (`nousresearch/h
 
 `docker logs -f hermes` is the container log. Host `hermes gateway status` is the unit, not the container. A skill path `~/.hermes/...` inside the container is `/opt/data/.hermes/...` and misses the mount.
 
+`docker logs` can stop days back (`--since` may print nothing). Read `~/.hermes/logs/gateway.log` and `errors.log` instead.
+
+Run the CLI inside the container as the data-dir owner: `docker exec -it -u hermes hermes hermes <cmd>`. Host `hermes` over root SSH writes root-owned files into `~/.hermes` that the container user cannot open. Symptoms: `Mnemosyne init failed: [Errno 13] Permission denied: '/opt/data/mnemosyne/data/mnemosyne.db.init.lock'` (memory silently off) and `Could not back up /opt/data/config.yaml`. Repair with the same reclaim the up script does, then restart:
+
+```bash
+find ~/.hermes -user 0 -exec chown -h "$(stat -c %u:%g ~/.hermes)" {} +
+docker restart hermes
+```
+
 ## Gateway running but bot silent
 
 1. Token correct? Regenerate via BotFather if unsure  

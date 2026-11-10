@@ -279,6 +279,12 @@ notion-cli me
 notion-cli search "a" --limit 1 >/dev/null || warn "search smoke returned error (share pages with integration)"
 notion-cli db-schema >/dev/null 2>&1 || warn "db-schema smoke failed (DB not shared?)"
 
+# notion-up may rewrite config.yaml — re-pin cron to current model.
+# Before the restart: the Docker up script reclaims root-owned files only once.
+if [[ -f "$SCRIPT_DIR/pin-cron-models.sh" ]]; then
+  bash "$SCRIPT_DIR/pin-cron-models.sh" || warn "cron model pin failed"
+fi
+
 log "Restarting gateway"
 refresh_gateway
 if ! docker_runtime_requested; then
@@ -290,11 +296,6 @@ ids="$(docker ps -aq --filter label=hermes-agent=1 2>/dev/null || true)"
 if [[ -n "${ids//[$'\n\r\t ']/}" ]]; then
   # shellcheck disable=SC2086
   docker rm -f $ids >/dev/null 2>&1 || true
-fi
-
-# notion-up may rewrite config.yaml — re-pin cron to current model
-if [[ -f "$SCRIPT_DIR/pin-cron-models.sh" ]]; then
-  bash "$SCRIPT_DIR/pin-cron-models.sh" || warn "cron model pin failed"
 fi
 
 log "Notion ready (REST CLI only — MCP disabled)"
