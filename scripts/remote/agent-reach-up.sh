@@ -8,6 +8,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../lib/common.sh
 source "$SCRIPT_DIR/../lib/common.sh"
+# shellcheck source=../lib/hermes-docker.sh
+source "$SCRIPT_DIR/../lib/hermes-docker.sh"
 
 export PATH="${HOME}/.local/bin:/usr/local/bin:${PATH}"
 HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
@@ -191,9 +193,10 @@ if [[ "${AGENT_REACH_HOST_CLI:-1}" == "1" ]]; then
 fi
 
 log "Restarting gateway"
-hermes gateway restart 2>/dev/null || hermes gateway start 2>/dev/null || true
-sleep 4
-hermes gateway status 2>/dev/null || true
+refresh_gateway
+if ! docker_runtime_requested; then
+  sleep 4
+fi
 
 log "Agent-Reach ready"
 log "  image:  $IMAGE_NAME"

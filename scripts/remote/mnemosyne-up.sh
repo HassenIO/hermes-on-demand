@@ -11,6 +11,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../lib/common.sh
 source "$SCRIPT_DIR/../lib/common.sh"
+# shellcheck source=../lib/hermes-docker.sh
+source "$SCRIPT_DIR/../lib/hermes-docker.sh"
 
 export PATH="${HOME}/.local/bin:/usr/local/bin:${PATH}"
 export HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
@@ -177,13 +179,14 @@ print(f"seeded {len(entries)} entries")
 PY
 fi
 
-log "Restarting gateway"
-hermes gateway restart 2>/dev/null || hermes gateway start 2>/dev/null || true
-sleep 5
-
 log "Status"
 hermes memory status 2>&1 || true
 "$VENV/bin/mnemosyne" stats 2>&1 || true
 hermes tools list 2>&1 | grep -i mnemosyne | head -25 || true
+
+# Last host write. With HERMES_DOCKER_RUNTIME=1 the up script reclaims root-owned
+# files after start; anything run as root after it (mnemosyne.db) stays root's.
+log "Restarting gateway"
+refresh_gateway
 
 log "Mnemosyne install complete (side-venv: $VENV)"

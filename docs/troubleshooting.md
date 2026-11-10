@@ -33,6 +33,21 @@ source ~/.bashrc
 hermes doctor
 ```
 
+## Docker runtime and the user unit
+
+If `HERMES_DOCKER_RUNTIME=1`, the gateway is container `hermes` (`nousresearch/hermes-agent`, command `gateway run`). Do not also start `hermes-gateway`. `systemctl --user start hermes-gateway` or `hermes gateway start` beside that container is a second writer. Stop one before starting the other. See [Deploy — Docker runtime](02-deploy.md#docker-runtime-opt-in).
+
+`docker logs -f hermes` is the container log. Host `hermes gateway status` is the unit, not the container. A skill path `~/.hermes/...` inside the container is `/opt/data/.hermes/...` and misses the mount.
+
+`docker logs` can stop days back (`--since` may print nothing). Read `~/.hermes/logs/gateway.log` and `errors.log` instead.
+
+Run the CLI inside the container as the data-dir owner: `docker exec -it -u hermes hermes hermes <cmd>`. Host `hermes` over root SSH writes root-owned files into `~/.hermes` that the container user cannot open. Symptoms: `Mnemosyne init failed: [Errno 13] Permission denied: '/opt/data/mnemosyne/data/mnemosyne.db.init.lock'` (memory silently off) and `Could not back up /opt/data/config.yaml`. Repair with the same reclaim the up script does, then restart:
+
+```bash
+find ~/.hermes -user 0 -exec chown -h "$(stat -c %u:%g ~/.hermes)" {} +
+docker restart hermes
+```
+
 ## Gateway running but bot silent
 
 1. Token correct? Regenerate via BotFather if unsure  
@@ -92,7 +107,9 @@ sg docker -c 'hermes gateway restart'
 
 ## Gateway dies after SSH logout
 
-Linger not enabled:
+If the Docker runtime is the writer, logout does not matter: the container uses `restart: unless-stopped`, not linger. Do not `hermes gateway install` or `hermes gateway start` while container `hermes` is up.
+
+On the host-unit path, linger is missing:
 
 ```bash
 loginctl show-user "$USER" | grep Linger

@@ -27,7 +27,8 @@ ssh-add -l                    # SSH key in agent
    - Pre-pull Docker terminal image
 3. **Firecrawl lite** on `127.0.0.1:3002` (opt out: `SKIP_FIRECRAWL=1`)
 4. **Mnemosyne** side-venv + Hermes wrapper plugin (opt out: `SKIP_MNEMOSYNE=1`)
-5. **healthcheck** (re-applies Docker patch if missing after upgrades)
+5. **S3 restore** when all four `AWS_*`/`S3_BUCKET` vars are set — pulls custom skills + `cron/jobs.json` back down, only if the host has no job set yet ([09-s3-snapshots](09-s3-snapshots.md))
+6. **healthcheck** (re-applies Docker patch if missing after upgrades)
 
 ### After first deploy (Telegram)
 
@@ -82,7 +83,48 @@ Upstream `hermes update` can overwrite `docker.py` and re-break Telegram sandbox
 bash ~/hermes-setup/scripts/remote/hermes-update.sh
 ```
 
-Both run `hermes update`, re-apply the path sanitize patch, refresh CLI links, reinstall artifacts, and restart the gateway. Healthcheck also re-applies the patch if it is missing.
+The host path runs `hermes update`, re-applies the path sanitize patch, refreshes CLI links, reinstalls artifacts, and restarts the gateway. With `HERMES_DOCKER_RUNTIME=1`, those commands pull `nousresearch/hermes-agent` and recreate the container; they do not run `hermes update`. Healthcheck also re-applies the patch if it is missing. Do not run bare `hermes update` on either path. See [Docker runtime](#docker-runtime-opt-in).
+
+## Docker runtime (opt-in)
+
+Default `make deploy` and `make update` keep the host venv and the `hermes-gateway` user unit. They do not start a container.
+
+Set `HERMES_DOCKER_RUNTIME=1` in the local `.env` (exact `1`; `true` does not count) to run the gateway from `nousresearch/hermes-agent` instead. The flag is not written into `~/.hermes/.env`.
+
+The container bind-mounts the existing host `$HOME/.hermes` directory at `/opt/data`. A fresh root-owned directory with no `state.db` or `sessions/` is given to a non-root `hermes` user before start. A root-owned directory that already has sessions is refused. The image is not given UID 10000. It does not use a named volume, and it does not mount single files (`auth.json`, `.env`, `config.yaml`). `network_mode: host` so loopback Firecrawl (`127.0.0.1:3002`) and SearXNG (`127.0.0.1:8888`) stay reachable. No published ports. Dashboard stays off. No Caddy, DNS, or Open WebUI. Telegram and Discord stay long-poll.
+
+`PUID` and `PGID` are the owner of that directory. The script refuses a root-owned tree. It does not `chown` the tree to UID 10000.
+
+One writer. The up script exits non-zero if `hermes-gateway` is `active`, `activating`, `reloading`, or `deactivating`, if a host `hermes gateway` process is running, or if another container already mounts that directory (running or stopped). It does not stop or disable the unit on that path. Stop the unit yourself, then retry:
+
+```bash
+systemctl --user stop hermes-gateway
+```
+
+After the container is up, the script disables the user unit so a reboot cannot start it beside `restart: unless-stopped`.
+
+Inside the container, `HOME` and `HERMES_HOME` are `/opt/data`, not `~/.hermes`. A skill or cron line that expands `~/.hermes` looks at `/opt/data/.hermes` and does not see this tree. There is no custom entrypoint to alias it. When the container is started, the host gets a symlink `/opt/data` → `$HOME/.hermes` so terminal-sandbox paths the process builds under `/opt/data` resolve on the host dockerd. Volume sources in `config.yaml` stay host paths.
+
+The host venv is not removed. `/usr/local/lib/hermes-agent` and `~/.hermes/hermes-agent` stay, so you can roll back. Mnemosyne (`.mnemosyne/venv`) and Agent-Reach (`.agent-reach/venv`) are host Pythons. They do not run inside the official image. This opt-in does not move them. Leaving the flag unset keeps them on the systemd path.
+
+Telegram `docker run` from inside the container is not claimed. The host colon-path patch still runs only when host `docker.py` exists. Image code under `/opt/hermes` is immutable. `make update` with the flag set pulls the image and recreates the container. It does not run `hermes update`.
+
+### Rollback to the host gateway
+
+Stop the container first. Do not start the unit while the container is running.
+
+```bash
+docker stop hermes
+docker rm hermes
+# unlink only; do not use -r. A symlink rm does not delete ~/.hermes.
+if [ "$(readlink /opt/data)" = "$HOME/.hermes" ]; then
+  rm /opt/data
+fi
+systemctl --user enable hermes-gateway
+hermes gateway start
+```
+
+`docker rm` has no `-v`. Do not `docker compose down -v`. Unset `HERMES_DOCKER_RUNTIME` before the next `make deploy`, or deploy will start the container again.
 
 ## Docker sandbox notes (small VPS)
 

@@ -5,6 +5,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../lib/common.sh
 source "$SCRIPT_DIR/../lib/common.sh"
+# shellcheck source=../lib/hermes-docker.sh
+source "$SCRIPT_DIR/../lib/hermes-docker.sh"
 
 export PATH="${HOME}/.local/bin:/usr/local/bin:${PATH}"
 HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
@@ -83,25 +85,14 @@ else
 fi
 
 if command -v hermes >/dev/null 2>&1; then
-  if hermes doctor >/dev/null 2>&1; then
+  if timeout 25 hermes doctor >/dev/null 2>&1; then
     log "OK  hermes doctor"
   else
-    warn "hermes doctor reported issues (non-fatal; gateway may still be fine)"
-    hermes doctor 2>&1 | tail -20 || true
+    warn "hermes doctor reported issues or timed out (non-fatal; gateway may still be fine)"
   fi
-  if hermes gateway status >/dev/null 2>&1; then
-    log "OK  gateway status"
-    hermes gateway status || true
-  else
-    warn "gateway status failed"
-    hermes gateway status || true
-    # Accept running process as soft OK
-    if pgrep -af 'hermes.*gateway' >/dev/null 2>&1; then
-      log "OK  gateway process found"
-    else
-      failed=1
-    fi
-  fi
+fi
+if ! apply_gateway_health; then
+  failed=1
 fi
 
 # Discord (optional — only when both token + allowlist are set)

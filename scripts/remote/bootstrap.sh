@@ -5,6 +5,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../lib/common.sh
 source "$SCRIPT_DIR/../lib/common.sh"
+# shellcheck source=../lib/hermes-docker.sh
+source "$SCRIPT_DIR/../lib/hermes-docker.sh"
 
 PAYLOAD_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 REMOTE_ENV="${PAYLOAD_DIR}/remote.env"
@@ -128,21 +130,6 @@ print(m.group(1).strip().strip('\"').strip(\"'\") if m else '')
   hermes config set terminal.backend docker >/dev/null 2>&1 || true
 fi
 
-log "Installing gateway service (user unit)"
-# Root system unit refuses without --run-as-user; user unit + linger is the
-# supported path for both root and normal accounts.
-hermes gateway install || true
-
-if command -v loginctl >/dev/null 2>&1; then
-  if loginctl enable-linger "$USER" 2>/dev/null; then
-    log "Linger enabled for $USER"
-  elif sudo loginctl enable-linger "$USER" 2>/dev/null; then
-    log "Linger enabled for $USER (via sudo)"
-  else
-    warn "Could not enable linger; gateway may stop on logout"
-  fi
-fi
-
 log "Pre-pulling Docker terminal image (best-effort)"
 if command -v docker >/dev/null 2>&1; then
   img="$(python3 - <<'PY' 2>/dev/null || true
@@ -157,13 +144,7 @@ PY
   docker pull "$img" || warn "docker pull $img failed (gateway can pull later)"
 fi
 
-log "Starting gateway"
-hermes gateway restart 2>/dev/null || hermes gateway start 2>/dev/null || {
-  # Foreground probe if service helpers fail
-  warn "service start helpers failed; trying hermes gateway in background"
-  nohup hermes gateway >>"$HERMES_HOME/logs/gateway.nohup.log" 2>&1 &
-  sleep 2
-}
+install_host_gateway_unless_docker
 
 # Pin cron jobs to config model (no-op if none exist yet)
 if [[ -f "$SCRIPT_DIR/pin-cron-models.sh" ]]; then
@@ -171,4 +152,6 @@ if [[ -f "$SCRIPT_DIR/pin-cron-models.sh" ]]; then
 fi
 
 log "Bootstrap finished"
-hermes gateway status 2>/dev/null || true
+if ! docker_runtime_requested; then
+  hermes gateway status 2>/dev/null || true
+fi

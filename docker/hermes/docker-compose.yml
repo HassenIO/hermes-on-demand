@@ -1,0 +1,21 @@
+# Opt-in Hermes gateway. Official image only. Data is the existing host
+# directory, mounted at /opt/data. Host network keeps loopback Firecrawl and
+# SearXNG reachable without publishing gateway ports. Dashboard stays off.
+# Do not add a hermes-agent=1 label (agent-reach removes containers by that label).
+
+name: hermes-gateway
+
+services:
+  hermes:
+    image: nousresearch/hermes-agent
+    container_name: hermes
+    restart: unless-stopped
+    command: gateway run
+    network_mode: host
+    volumes:
+      - ${HERMES_HOME}:/opt/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      PUID: ${HERMES_PUID}
+      PGID: ${HERMES_PGID}
+      TZ: ${TZ}

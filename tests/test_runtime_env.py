@@ -26,6 +26,7 @@ DEPLOY_ONLY = {
     "PIN_CRON_FORCE": "1",
     "FIRECRAWL_MODE": "full",
     "LLM_MODEL": "should-not-forward",
+    "HERMES_DOCKER_RUNTIME": "1",
 }
 ABSENT_EXACT = (
     "REMOTE_DIR",
@@ -33,6 +34,8 @@ ABSENT_EXACT = (
     "PIN_CRON_FORCE",
     "FIRECRAWL_MODE",
     "LLM_MODEL",
+    "HERMES_DOCKER_RUNTIME",
+    "HERMES_DISABLE_TELEGRAM",
 )
 
 
@@ -87,6 +90,21 @@ def test_runtime_env_defaults_omit_deploy_keys() -> None:
         "TZ": "Asia/Dubai",
     }
     assert_deploy_keys_absent(parsed)
+
+
+def test_disable_telegram_omits_telegram_keys_and_keeps_discord() -> None:
+    _, parsed = run_filter({
+        **REQUIRED,
+        "HERMES_DISABLE_TELEGRAM": "1",
+        "TELEGRAM_HOME_CHANNEL": "9",
+        "DISCORD_BOT_TOKEN": "tok",
+        "DISCORD_ALLOWED_USERS": "42",
+    })
+    assert not any(key.startswith("TELEGRAM_") for key in parsed)
+    assert "HERMES_TELEGRAM_DISABLE_FALLBACK_IPS" not in parsed
+    assert "HERMES_DISABLE_TELEGRAM" not in parsed
+    assert parsed["DISCORD_BOT_TOKEN"] == "tok"
+    assert parsed["DISCORD_ALLOWED_USERS"] == "42"
 
 
 def test_discord_half_pair_omits_discord_keys() -> None:
