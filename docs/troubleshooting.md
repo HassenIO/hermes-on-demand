@@ -70,12 +70,14 @@ See [Telegram — groups](https://hermes-agent.nousresearch.com/docs/user-guide/
 ```bash
 hermes doctor
 hermes config get model
-# ensure OPENROUTER_API_KEY in ~/.hermes/.env
-# model should be xiaomi/mimo-v2.5 with provider openrouter
+# model should be claude-opus-5-5 with provider anthropic
+hermes auth status anthropic   # logged in
 ```
 
-- Key valid and funded on OpenRouter?
-- Model id exact: `xiaomi/mimo-v2.5` ([catalog](https://openrouter.ai/xiaomi/mimo-v2.5))
+- OAuth expired or revoked? `hermes auth refresh anthropic`, or log in again: `hermes auth add anthropic --type oauth --no-browser`. With the Docker runtime, prefix `docker exec -it -u hermes hermes`.
+- Subscription limit hit? `hermes auth list` shows the cooldown; `hermes auth reset anthropic` clears it after the window.
+- Model id exact: `claude-opus-5-5` (not the OpenRouter `anthropic/...` form)
+- Cron or embeddings failing instead? Those use OpenRouter: check `OPENROUTER_API_KEY` in `~/.hermes/.env`
 
 ## Docker terminal failures
 

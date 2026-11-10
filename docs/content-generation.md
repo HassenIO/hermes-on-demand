@@ -56,9 +56,9 @@ Brief → Research → Outline → Draft → Verify → Publish
 
 | Stage | Model |
 |---|---|
-| Research, draft, verify | `xiaomi/mimo-v2.5` only. Do not switch to Sonnet. |
+| Research, draft, verify | Cron jobs keep the OpenRouter model they already pin (a `xiaomi/mimo` flash model). Do not switch to Sonnet. |
 
-Cron content jobs pin `"model": "xiaomi/mimo-v2.5"`.
+Cron content jobs pin their own `provider` and `model`, so the chat default (`claude-opus-5-5`) does not move them or spend subscription limits on them.
 
 ## Deploy
 

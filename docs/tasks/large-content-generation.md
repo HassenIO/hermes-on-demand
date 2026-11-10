@@ -45,7 +45,7 @@ Infrastructure-as-code / control plane for [Nous Research Hermes Agent](https://
 | Layer | Role |
 |---|---|
 | Gateway | Telegram (primary), optional Discord |
-| Model | OpenRouter; default today `xiaomi/mimo-v2.5` (flash-class) |
+| Model | Chat: Anthropic `claude-opus-5-5` (subscription OAuth). Cron content jobs keep their own OpenRouter pin |
 | Skills | `SKILL.md` playbooks under `skills/` → `~/.hermes/skills/` |
 | Cron | Fresh headless session per job; delivery to Discord/Telegram/Notion/local |
 | Web | SearXNG + Firecrawl lite |
@@ -287,7 +287,7 @@ PUBLISH        file + structured Notion; chat/Discord = teaser + link only
 - Do not put the entire editorial manual in SOUL or one mega-skill (token death).  
 - Do not use `notion-cli create-report` for structured long docs.  
 - Do not rely on chat memory for cron content.  
-- Do not change the **global** default chat model to an expensive frontier model, and do not pin Sonnet for a stage. Chat, cron, and long-form content use `model.default`.
+- Do not pin Sonnet for a stage. Chat uses `model.default`; cron content jobs keep the model they already pin.
 
 ### 4.3 Model routing policy (superseded)
 

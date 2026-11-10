@@ -33,12 +33,21 @@ Optional in `.env`:
 - `SSH_PORT` — if not 22
 - `SSH_IDENTITY_FILE` — path to a specific key if not using the agent default
 
-## 3. OpenRouter API key + model
+## 3. Model: Claude subscription + OpenRouter key
 
-1. Create an account and key: [openrouter.ai/keys](https://openrouter.ai/keys)
-2. Confirm model availability: [xiaomi/mimo-v2.5](https://openrouter.ai/xiaomi/mimo-v2.5)
-3. Put the key in `.env` as `OPENROUTER_API_KEY=`
-4. Model id is **not** in `.env`; it is pinned in `config/config.yaml.example` as `xiaomi/mimo-v2.5`
+The chat model is `claude-opus-5-5` on provider `anthropic`, pinned in `config/config.yaml.example`. It is **not** in `.env`.
+
+1. After the first deploy, log in to Anthropic once on the VPS with your Claude subscription (OAuth, no API key):
+
+   ```bash
+   # Docker runtime (HERMES_DOCKER_RUNTIME=1)
+   docker exec -it -u hermes hermes hermes auth add anthropic --type oauth --no-browser
+   # Host runtime
+   hermes auth add anthropic --type oauth --no-browser
+   ```
+
+   The token lands in VPS `~/.hermes/auth.json`. It never goes in `.env` or this repo. Check it with `hermes auth status anthropic` (expect `logged in`).
+2. OpenRouter is still required for Mnemosyne embeddings and the auxiliary fallback. Create a key at [openrouter.ai/keys](https://openrouter.ai/keys) and put it in `.env` as `OPENROUTER_API_KEY=`.
 
 Hermes requires models with at least **64k context**. MiMo-V2.5 on OpenRouter exposes a large context window and is suitable.
 

@@ -89,12 +89,14 @@ Pinned in `config/config.yaml.example`:
 
 ```yaml
 model:
-  provider: openrouter
-  default: xiaomi/mimo-v2.5
+  provider: anthropic
+  default: claude-opus-5-5
 ```
 
-- Provider uses `OPENROUTER_API_KEY` from `.env`
-- Model catalog page: [xiaomi/mimo-v2.5](https://openrouter.ai/xiaomi/mimo-v2.5)
+- Provider uses the Anthropic OAuth login in VPS `~/.hermes/auth.json` (see [prerequisites](01-prerequisites.md#3-model-claude-subscription--openrouter-key)), not a key in `.env`
+- Usage counts against your Claude subscription limits, not per-token billing
+- `OPENROUTER_API_KEY` stays required: Mnemosyne embeddings and the auxiliary fallback use it
+- Cron jobs that already name another model keep it on `make push-config`; unpinned jobs move to `claude-opus-5-5`. `PIN_CRON_FORCE=1` on the VPS moves all of them
 - Change the model in `config/config.yaml.example`, then `make push-config` (pins cron). Do not use `hermes model` on the VPS.
 
 Do **not** put `LLM_MODEL` in `.env` — upstream removed that; `config.yaml` is source of truth.
@@ -123,7 +125,7 @@ terminal:
 Or on the VPS:
 
 ```bash
-hermes config set model.default xiaomi/mimo-v2.5
+hermes config set model.default claude-opus-5-5
 hermes config set terminal.backend docker
 hermes gateway restart
 ```

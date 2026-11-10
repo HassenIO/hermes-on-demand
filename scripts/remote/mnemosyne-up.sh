@@ -114,9 +114,8 @@ fi
 log "Setting memory.provider=mnemosyne"
 hermes config set memory.provider mnemosyne 2>/dev/null || true
 
-# Never let memory provider leak into model.provider
-hermes config set model.provider openrouter 2>/dev/null || true
-hermes config set memory.provider mnemosyne 2>/dev/null || true
+CONFIG_EXAMPLE="$(cd "$SCRIPT_DIR/../.." && pwd)/config/config.yaml.example"
+export CONFIG_EXAMPLE
 
 python3 - <<'PY'
 """Set Mnemosyne as default memory provider; disable built-in injection."""
@@ -126,12 +125,15 @@ import os, re
 p = Path(os.environ.get("HERMES_HOME", str(Path.home() / ".hermes"))) / "config.yaml"
 text = p.read_text() if p.exists() else ""
 
-# Guard: model.provider must remain an LLM provider
-text = re.sub(
-    r"(?m)^(model:\n(?:  [^\n]*\n)*?  provider:\s*)mnemosyne\s*$",
-    r"\1openrouter",
-    text,
-)
+# Guard: model.provider must remain an LLM provider. Restore the repo's, not a literal.
+example = Path(os.environ["CONFIG_EXAMPLE"])
+m = re.search(r"(?m)^model:\n(?:  [^\n]*\n)*?  provider:\s*(\S+)", example.read_text()) if example.exists() else None
+if m:
+    text = re.sub(
+        r"(?m)^(model:\n(?:  [^\n]*\n)*?  provider:\s*)mnemosyne\s*$",
+        lambda mm: mm.group(1) + m.group(1),
+        text,
+    )
 
 mem_block = """memory:
   provider: mnemosyne
