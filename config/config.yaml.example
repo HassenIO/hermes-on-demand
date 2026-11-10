@@ -6,9 +6,10 @@
 #   https://hermes-agent.nousresearch.com/docs/integrations/providers
 
 model:
-  provider: openrouter
-  # Chat, cron, and long-form content all use this model. Do not pin Sonnet.
-  default: xiaomi/mimo-v2.5
+  # Claude subscription via OAuth (hermes auth add anthropic --type oauth on the VPS).
+  # No key in .env. Cron jobs already pinned to another model keep it. Do not pin Sonnet.
+  provider: anthropic
+  default: claude-opus-5-5
 
 terminal:
   backend: docker

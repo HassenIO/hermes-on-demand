@@ -96,3 +96,15 @@ def test_config_invariants() -> None:
         assert pattern.search(text) is None, pattern.pattern
     for line in lines:
         assert ASSIGNMENT.search(line) is None, line
+
+
+def test_model_provider_comes_from_example_only() -> None:
+    # A literal provider in an install script reverts model.provider on every
+    # deploy and pairs it with a model id that provider does not serve.
+    lines = active_lines(CONFIG.read_text())
+    model = body_after(lines, find_key(lines, "model"))
+    assert raw_scalar(model, "provider")
+    for script in sorted((ROOT / "scripts" / "remote").glob("*.sh")):
+        text = script.read_text()
+        assert not re.search(r"config set model\.provider [\w-]+", text), script.name
+        assert r"\1openrouter" not in text, script.name

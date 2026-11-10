@@ -14,7 +14,7 @@ scripts/deploy.sh            --runs-->    scripts/remote/bootstrap.sh
                                             Docker terminal sandbox
                                             Telegram long-poll (outbound)
                                             Discord Gateway WS (outbound; optional)
-                                            OpenRouter → xiaomi/mimo-v2.5
+                                            Anthropic (OAuth) → claude-opus-5-5
                                              Firecrawl-compatible API (:3002 localhost)
                                              Agent-Reach terminal image (yt-dlp, gh, …)
 ```
@@ -25,7 +25,7 @@ scripts/deploy.sh            --runs-->    scripts/remote/bootstrap.sh
 | Install | Official [install.sh](https://hermes-agent.nousresearch.com/docs/getting-started/installation) |
 | Process manager | systemd user service + linger |
 | Messaging | [Telegram](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/telegram) (default) · [Discord](07-discord-gateway.md) (optional, same gateway) |
-| Model | OpenRouter [`xiaomi/mimo-v2.5`](https://openrouter.ai/xiaomi/mimo-v2.5) |
+| Model | Anthropic `claude-opus-5-5` via Claude subscription OAuth. OpenRouter stays for embeddings and auxiliary fallback |
 | Agent shell | Docker backend (isolated from host secrets by default) |
 | Web scrape | Local Firecrawl-compatible API ([docs/tools/firecrawl](tools/firecrawl.md)) |
 
