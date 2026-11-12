@@ -85,7 +85,7 @@ else
 fi
 
 if command -v hermes >/dev/null 2>&1; then
-  if timeout 25 hermes doctor >/dev/null 2>&1; then
+  if run_in_gateway timeout 25 hermes doctor >/dev/null 2>&1; then
     log "OK  hermes doctor"
   else
     warn "hermes doctor reported issues or timed out (non-fatal; gateway may still be fine)"
@@ -134,7 +134,7 @@ VENV="${MNEMOSYNE_VENV:-$HERMES_HOME/.mnemosyne/venv}"
 if [[ -x "$VENV/bin/mnemosyne-hermes" ]]; then
   log "OK  Mnemosyne side-venv present ($VENV)"
   if command -v hermes >/dev/null 2>&1; then
-    if hermes memory status 2>&1 | grep -qi 'Provider:.*mnemosyne'; then
+    if run_in_gateway hermes memory status 2>&1 | grep -qi 'Provider:.*mnemosyne'; then
       log "OK  memory.provider=mnemosyne"
     else
       warn "Mnemosyne installed but not selected (hermes config set memory.provider mnemosyne)"
@@ -163,7 +163,7 @@ else
   warn "Agent-Reach skill missing (~/.hermes/skills/agent-reach/SKILL.md)"
 fi
 if command -v hermes >/dev/null 2>&1; then
-  img="$(hermes config get terminal.docker_image 2>/dev/null || true)"
+  img="$(run_in_gateway hermes config get terminal.docker_image 2>/dev/null || true)"
   if echo "$img" | grep -q 'agent-reach'; then
     log "OK  terminal.docker_image → agent-reach"
   elif [[ -n "$img" ]]; then

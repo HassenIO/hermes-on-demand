@@ -39,10 +39,14 @@ On small VPS (~1.5–2 GB), default `embeddings` is used. When `OPENROUTER_API_K
 ## After install
 
 ```bash
-# On VPS
+# On VPS (host runtime)
 hermes memory status          # Provider: mnemosyne ← active
 ~/.hermes/.mnemosyne/venv/bin/mnemosyne stats
 hermes tools list | grep mnemosyne_
+
+# On VPS (HERMES_DOCKER_RUNTIME=1): the venv only runs inside the container
+docker exec -u hermes hermes hermes memory status
+docker exec -u hermes --env-file ~/.hermes/.env hermes /opt/data/.mnemosyne/venv/bin/mnemosyne stats
 ```
 
 Default config (`config/config.yaml.example`):
