@@ -1017,3 +1017,51 @@ def test_run_mnemosyne_uses_container_as_owner_with_runtime_env(box: Path) -> No
     log = (box / "down" / "stub.log").read_text()
     assert "host store x" in log
     assert "exec -u" not in log
+
+
+def test_run_in_gateway_execs_in_container_or_runs_on_host(box: Path) -> None:
+    home = box / "home"
+    home.mkdir()
+    body = "run_in_gateway hermes memory status\n"
+    up = run(source_lib(body), make_env(box / "up", HERMES_HOME=str(home), DOCKER_RUNNING="true",
+                                        STAT_UID="999", STAT_GID="976"))
+    assert up.returncode == 0, up.stderr
+    assert f"exec -u 999:976 --env-file {home}/.env hermes hermes memory status" in (box / "up" / "stub.log").read_text()
+    assert not (box / "up" / "hermes.log").exists()
+
+    down = run(source_lib(body), make_env(box / "down", HERMES_HOME=str(home), DOCKER_RUNNING="false"))
+    assert down.returncode == 0, down.stderr
+    assert "memory status" in (box / "down" / "hermes.log").read_text()
+    assert "exec -u" not in (box / "down" / "stub.log").read_text()
+
+
+def test_mnemosyne_up_runs_venv_and_cli_through_gateway() -> None:
+    # Bare host calls of the venv or the hermes CLI break the container venv and
+    # leave root-owned files. The host branch only builds the host venv.
+    lines = (ROOT / "scripts" / "remote" / "mnemosyne-up.sh").read_text().splitlines()
+    for line in lines:
+        s = line.strip()
+        assert not s.startswith('"$VENV/bin/'), line
+        assert not s.startswith("hermes "), line
+
+
+def test_config_push_pins_before_restart() -> None:
+    text = (ROOT / "scripts" / "deploy.sh").read_text()
+    block = text[text.index('if [[ "$MODE" == "config-only" ]]'):]
+    block = block[: block.index("\n  exit 0\nfi")]
+    assert block.index("pin-cron-models.sh") < block.index("gateway_refresh_ssh")
+    assert block.count("pin-cron-models.sh") == 1
+
+
+def test_cron_pin_and_health_use_gateway_cli() -> None:
+    pin = (ROOT / "scripts" / "remote" / "pin-cron-models.sh").read_text()
+    assert "run_in_gateway hermes cron edit" in pin
+    health = (ROOT / "scripts" / "remote" / "healthcheck.sh").read_text()
+    for cmd in ("timeout 25 hermes doctor", "hermes memory status", "hermes config get"):
+        assert f"run_in_gateway {cmd}" in health, cmd
+
+
+def test_notion_up_never_logs_page_ids() -> None:
+    for line in (ROOT / "scripts" / "remote" / "notion-up.sh").read_text().splitlines():
+        if line.strip().startswith(("log ", "warn ")):
+            assert "PARENT_NORM" not in line and "_DB}" not in line and "TMPL}" not in line, line

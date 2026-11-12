@@ -228,14 +228,14 @@ if [[ -L "\$HOME/.local/bin/hermes" ]] || [[ ! -e "\$HOME/.local/bin/hermes" ]];
   ln -sfn /usr/local/lib/hermes-agent/venv/bin/hermes "\$HOME/.local/bin/hermes" 2>/dev/null || true
 fi
 EOF
-  gateway_refresh_ssh "$REMOTE_DIR" "export PATH=\"\$HOME/.local/bin:/usr/local/bin:\$PATH\"; source '$REMOTE_DIR/scripts/lib/common.sh'; source '$REMOTE_DIR/scripts/lib/hermes-docker.sh'; start_host_gateway; hermes gateway status || true"
+  # Pin before the restart: the Docker up script reclaims root-owned files once.
   ssh_cmd "bash '$REMOTE_DIR/scripts/remote/pin-cron-models.sh'" || true
-  # Re-apply Notion if both keys present (config.yaml.example has no mcp/notion blocks)
+  gateway_refresh_ssh "$REMOTE_DIR" "export PATH=\"\$HOME/.local/bin:/usr/local/bin:\$PATH\"; source '$REMOTE_DIR/scripts/lib/common.sh'; source '$REMOTE_DIR/scripts/lib/hermes-docker.sh'; start_host_gateway; hermes gateway status || true"
+  # Re-apply Notion if both keys present (config.yaml.example has no mcp/notion blocks).
+  # notion-up re-pins cron itself before its own gateway restart.
   if [[ -n "${NOTION_API_KEY:-}" && -n "${NOTION_REPORTS_PARENT_PAGE_ID:-}" ]]; then
     log "Re-applying Notion after config push"
     ssh_cmd "$(with_docker_runtime_flag "bash '$REMOTE_DIR/scripts/remote/notion-up.sh'")" || warn "Notion re-apply failed"
-    # notion-up may rewrite config.yaml — re-pin cron models
-    ssh_cmd "bash '$REMOTE_DIR/scripts/remote/pin-cron-models.sh'" || warn "cron pin after notion failed"
   fi
   ssh_cmd "bash '$REMOTE_DIR/scripts/remote/healthcheck.sh'"
   log "Config deploy done. Message Telegram and/or Discord (/new to reload profile)."
