@@ -1059,6 +1059,9 @@ def test_cron_pin_and_health_use_gateway_cli() -> None:
     health = (ROOT / "scripts" / "remote" / "healthcheck.sh").read_text()
     for cmd in ("timeout 25 hermes doctor", "hermes memory status", "hermes config get"):
         assert f"run_in_gateway {cmd}" in health, cmd
+    # set -o pipefail: grep -q closing the pipe early fails it with SIGPIPE (141).
+    for line in health.splitlines():
+        assert not ("run_in_gateway" in line and "| grep -q" in line), line
 
 
 def test_notion_up_never_logs_page_ids() -> None:

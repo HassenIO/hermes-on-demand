@@ -134,7 +134,9 @@ VENV="${MNEMOSYNE_VENV:-$HERMES_HOME/.mnemosyne/venv}"
 if [[ -x "$VENV/bin/mnemosyne-hermes" ]]; then
   log "OK  Mnemosyne side-venv present ($VENV)"
   if command -v hermes >/dev/null 2>&1; then
-    if run_in_gateway hermes memory status 2>&1 | grep -qi 'Provider:.*mnemosyne'; then
+    # Capture first: with pipefail, grep -q exits early and SIGPIPE fails the pipe.
+    mem_status="$(run_in_gateway hermes memory status 2>&1 || true)"
+    if grep -qi 'Provider:.*mnemosyne' <<<"$mem_status"; then
       log "OK  memory.provider=mnemosyne"
     else
       warn "Mnemosyne installed but not selected (hermes config set memory.provider mnemosyne)"
