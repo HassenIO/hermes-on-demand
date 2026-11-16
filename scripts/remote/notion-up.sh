@@ -301,5 +301,5 @@ fi
 log "Notion ready (REST CLI only — MCP disabled)"
 log "  cli:    $(command -v notion-cli)"
 log "  skill:  $SKILL_DST/SKILL.md"
-log "  parent: $PARENT_NORM"
+log "  parent: set"
 log "In Telegram: /new then: notion-cli search / find-db"
