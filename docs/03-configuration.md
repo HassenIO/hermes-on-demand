@@ -56,6 +56,7 @@ After `make push-config`, re-run **`make cron-push`** if you changed `cron/jobs.
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `OPENROUTER_API_KEY` | yes | [OpenRouter](https://openrouter.ai/keys) |
+| `MNEMOSYNE_EMBEDDING_MODEL` | no | Mnemosyne embedding model on OpenRouter; default `openai/text-embedding-3-small` (1536-dim). The runtime env also writes `MNEMOSYNE_EMBEDDING_API_URL` and `MNEMOSYNE_EMBEDDING_API_KEY` (= `OPENROUTER_API_KEY`). Changing the model changes the vector size: run `mnemosyne reindex` on the VPS after the push |
 | `TELEGRAM_BOT_TOKEN` | yes | From @BotFather |
 | `TELEGRAM_ALLOWED_USERS` | yes | Numeric Telegram user ids |
 | `TELEGRAM_HOME_CHANNEL` | no | Home chat for cron; or use `/sethome` |

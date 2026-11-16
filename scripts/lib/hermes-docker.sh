@@ -214,6 +214,31 @@ reclaim_root_owned_files() {
   [[ "$found" -eq 1 ]]
 }
 
+# Run a command where the gateway runs. With the official container up, that is
+# inside it as the data-dir owner with the runtime env: root SSH on the host would
+# leave root-owned files and reads the host install, not the gateway's.
+run_in_gateway() {
+  local home="${HERMES_HOME:-$HOME/.hermes}"
+  local uid gid
+  if container_is_official_gateway; then
+    read -r uid gid <<<"$(data_dir_owner_ids "$home")"
+    docker exec -u "${uid}:${gid}" --env-file "$home/.env" hermes "$@"
+    return
+  fi
+  "$@"
+}
+
+# The Mnemosyne side-venv is built on the image's Python and cannot start on the
+# host, so with the container up it runs there (container path of the same venv).
+run_mnemosyne() {
+  local home="${HERMES_HOME:-$HOME/.hermes}"
+  if container_is_official_gateway; then
+    run_in_gateway /opt/data/.mnemosyne/venv/bin/mnemosyne "$@"
+    return
+  fi
+  "${MNEMOSYNE_VENV:-$home/.mnemosyne/venv}/bin/mnemosyne" "$@"
+}
+
 data_dir_owner_ids() {
   local dir="$1"
   local uid gid

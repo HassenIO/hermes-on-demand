@@ -81,6 +81,9 @@ def test_runtime_env_defaults_omit_deploy_keys() -> None:
     assert stdout.splitlines()[0] == HEADER
     assert parsed == {
         "OPENROUTER_API_KEY": "test-openrouter",
+        "MNEMOSYNE_EMBEDDING_API_URL": "https://openrouter.ai/api/v1",
+        "MNEMOSYNE_EMBEDDING_API_KEY": "test-openrouter",
+        "MNEMOSYNE_EMBEDDING_MODEL": "openai/text-embedding-3-small",
         "TELEGRAM_BOT_TOKEN": "test-telegram",
         "TELEGRAM_ALLOWED_USERS": "1",
         "FIRECRAWL_API_URL": "http://127.0.0.1:3002",
@@ -192,3 +195,9 @@ def test_deploy_calls_the_shared_filter_after_ssh() -> None:
     assert "FIRECRAWL_API_URL=" in lib
     assert text.index('log "SSH probe') < text.index("build_runtime_env")
     assert 'chmod 600 "$RUNTIME_ENV"' in text
+
+
+def test_mnemosyne_embedding_model_override_is_copied() -> None:
+    _, parsed = run_filter({**REQUIRED, "MNEMOSYNE_EMBEDDING_MODEL": "openai/text-embedding-3-large"})
+    assert parsed["MNEMOSYNE_EMBEDDING_MODEL"] == "openai/text-embedding-3-large"
+    assert parsed["MNEMOSYNE_EMBEDDING_API_KEY"] == REQUIRED["OPENROUTER_API_KEY"]

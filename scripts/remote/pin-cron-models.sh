@@ -9,6 +9,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../lib/common.sh
 source "$SCRIPT_DIR/../lib/common.sh"
+# shellcheck source=../lib/hermes-docker.sh
+source "$SCRIPT_DIR/../lib/hermes-docker.sh"
 
 export PATH="${HOME}/.local/bin:/usr/local/bin:${PATH}"
 HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
@@ -91,7 +93,7 @@ while IFS=$'\t' read -r action jid name extra; do
     skipped=$((skipped + 1))
     continue
   fi
-  out="$(hermes cron edit "$jid" --provider "$PROVIDER" --model "$MODEL" 2>&1)" && ok=1 || ok=0
+  out="$(run_in_gateway hermes cron edit "$jid" --provider "$PROVIDER" --model "$MODEL" 2>&1)" && ok=1 || ok=0
   if [[ "$ok" -eq 1 ]]; then
     log "  pinned $jid → $PROVIDER / $MODEL"
     pinned=$((pinned + 1))

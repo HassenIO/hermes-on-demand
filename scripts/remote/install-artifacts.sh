@@ -17,6 +17,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../lib/common.sh
 source "$SCRIPT_DIR/../lib/common.sh"
+# shellcheck source=../lib/hermes-docker.sh
+source "$SCRIPT_DIR/../lib/hermes-docker.sh"
 
 PAYLOAD_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 ART_DIR="${PAYLOAD_DIR}/artifacts"
@@ -110,11 +112,12 @@ PY
 }
 _ensure_cv_volume
 
-# Best-effort: seed Mnemosyne pointer (if installed)
+# Best-effort: seed Mnemosyne pointer (if installed). Host path on purpose: the
+# agent's file and terminal tools run in the sandbox, which mounts CV.md there.
 VENV="${MNEMOSYNE_VENV:-$HERMES_HOME/.mnemosyne/venv}"
 if [[ -x "$VENV/bin/mnemosyne" ]]; then
   log "Seeding Mnemosyne CV pointer"
-  "$VENV/bin/mnemosyne" store \
+  run_mnemosyne store \
     "Hassen's full professional CV is on disk at ${HERMES_HOME}/CV.md. Read that file for freelancing, opportunity matching, or detailed career history. Do not invent CV details." \
     2>/dev/null || warn "mnemosyne store CV pointer failed (non-fatal)"
 fi

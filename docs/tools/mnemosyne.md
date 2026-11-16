@@ -34,15 +34,19 @@ Optional:
 MNEMOSYNE_PROFILE=all ./scripts/deploy.sh --mnemosyne   # heavier local LLM extras
 ```
 
-On small VPS (~1.5–2 GB), default `embeddings` is used. When `OPENROUTER_API_KEY` is present, the installer also sets remote embedding env vars so vectors can go through OpenRouter instead of only local models.
+On small VPS (~1.5–2 GB), default `embeddings` is used. When `OPENROUTER_API_KEY` is present, the installer also sets remote embedding env vars so vectors can go through OpenRouter instead of only local models. `make push-config` writes the same vars (`build_runtime_env`), so a config push keeps 1536-dim OpenRouter vectors. If Mnemosyne logs `Embedding dimension mismatch`, the index was built with the other size: push config, then run `MNEMOSYNE_EMBEDDING_DIM=1536 mnemosyne reindex` on the VPS (it backs up first).
 
 ## After install
 
 ```bash
-# On VPS
+# On VPS (host runtime)
 hermes memory status          # Provider: mnemosyne ← active
 ~/.hermes/.mnemosyne/venv/bin/mnemosyne stats
 hermes tools list | grep mnemosyne_
+
+# On VPS (HERMES_DOCKER_RUNTIME=1): the venv only runs inside the container
+docker exec -u hermes hermes hermes memory status
+docker exec -u hermes --env-file ~/.hermes/.env hermes /opt/data/.mnemosyne/venv/bin/mnemosyne stats
 ```
 
 Default config (`config/config.yaml.example`):
