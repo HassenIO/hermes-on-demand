@@ -45,6 +45,13 @@ ARG AGENT_BROWSER_VERSION=0.26.0
 RUN npm install -g --ignore-scripts --no-audit --fetch-retries=5 "agent-browser@${AGENT_BROWSER_VERSION}" \
   && agent-browser --version
 
+# Claude Code CLI for the bundled claude-code skill. Auth comes from CLAUDE_CODE_OAUTH_TOKEN
+# via terminal.docker_forward_env. Pinned; the in-container auto-updater stays off.
+ARG CLAUDE_CODE_VERSION=2.1.319
+ENV DISABLE_AUTOUPDATER=1
+RUN npm install -g --no-audit --fetch-retries=5 "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
+  && claude --version
+
 # Config dir mounted from host at runtime
 RUN mkdir -p /root/.agent-reach && chmod 700 /root/.agent-reach
 
