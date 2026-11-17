@@ -13,6 +13,10 @@ Give Hermes eyes on the open internet via [Agent-Reach](https://github.com/Panni
 | Semantic search | `mcporter` + Exa (if available) |
 | Bilibili | `bili` / bili-cli |
 
+The image is built on `nousresearch/hermes-sandbox:desktop`, so it also carries the Bot Desktop stack (Xvnc, xfce, Playwright Chromium). Hermes `browser_*` tools start inside the sandbox. Without it they fail with `Bot Desktop needs Xvnc ... inside the terminal backend's sandbox`.
+
+The Dockerfile also installs the `agent-browser` CLI, which Hermes runs by name in the sandbox. Desktop images after v0.21 dropped it. Without it the browser fails with `exec: agent-browser: not found`. Keep `AGENT_BROWSER_VERSION` in step with `agent-browser` in `/opt/hermes/pm/lock.json` in the gateway container after `make update`. Do not fix that with `bot_desktop.placement: gateway`: that runs the browser next to `~/.hermes/.env`.
+
 **Not in v1:** Twitter/Reddit cookies, OpenCLI desktop sessions, XiaoHongShu MCP.
 
 Generic scrape/search still uses **Firecrawl** (`web.backend: firecrawl`). Use Agent-Reach for platform-specific flows.
@@ -38,7 +42,7 @@ AGENT_REACH_REF=main ./scripts/deploy.sh --agent-reach
 
 ## What the installer does (VPS)
 
-1. Builds Docker image `hermes-terminal:agent-reach` from `extensions/agent-reach/docker/Dockerfile`
+1. Builds Docker image `hermes-terminal:agent-reach` from `extensions/agent-reach/docker/Dockerfile`, pulling the latest `desktop` base, and checks the CLIs and desktop binaries
 2. Installs skill → `~/.hermes/skills/agent-reach/SKILL.md`
 3. Sets `terminal.docker_image` and mounts `~/.agent-reach`
 4. Removes old Hermes sandbox containers so the new image is used

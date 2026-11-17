@@ -1,7 +1,8 @@
 # Hermes Docker terminal image with Agent-Reach zero-config CLIs.
 # Built on the VPS by scripts/remote/agent-reach-up.sh
 # Upstream: https://github.com/Panniantong/Agent-Reach
-FROM nikolaik/python-nodejs:python3.11-nodejs20
+# Base adds the Bot Desktop stack (Xvnc, xfce, Chromium) that Hermes browser_* needs in the sandbox.
+FROM nousresearch/hermes-sandbox:desktop
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
@@ -37,6 +38,12 @@ RUN python3 -m pip install --upgrade pip \
   && gh --version \
   && mcporter --help >/dev/null 2>&1 || true \
   && (bili --help >/dev/null 2>&1 || bili-cli --help >/dev/null 2>&1 || true)
+
+# Hermes runs agent-browser by name inside the sandbox; desktop images after v0.21 no longer bake it in.
+# Keep in step with agent-browser in /opt/hermes/pm/lock.json.
+ARG AGENT_BROWSER_VERSION=0.26.0
+RUN npm install -g --ignore-scripts --no-audit --fetch-retries=5 "agent-browser@${AGENT_BROWSER_VERSION}" \
+  && agent-browser --version
 
 # Config dir mounted from host at runtime
 RUN mkdir -p /root/.agent-reach && chmod 700 /root/.agent-reach

@@ -37,6 +37,7 @@ chmod 700 "$AGENT_REACH_HOME"
 # --- Build terminal image (tools live here for Docker backend) ---
 log "Building Docker image $IMAGE_NAME (may take several minutes)"
 docker build \
+  --pull \
   --build-arg "AGENT_REACH_REF=$AGENT_REACH_REF" \
   -t "$IMAGE_NAME" \
   -f "$EXT_DIR/docker/Dockerfile" \
@@ -50,6 +51,9 @@ docker run --rm "$IMAGE_NAME" bash -lc '
   python3 -c "import feedparser; print(\"feedparser ok\")"
   command -v agent-reach
   command -v curl
+  for bin in agent-browser Xvnc xfwm4 xfce4-panel xfdesktop xfsettingsd dbus-run-session xauth xdpyinfo xprop; do
+    command -v "$bin" >/dev/null || { echo "missing $bin"; exit 1; }
+  done
 ' || die "image tool smoke failed"
 
 # --- Hermes skill ---
