@@ -31,6 +31,8 @@ terminal:
     - NOTION_API_KEY
     - NOTION_TOKEN
     - NOTION_REPORTS_PARENT_PAGE_ID
+    # Bundled claude-code skill runs `claude -p` in the sandbox (docs/tools/claude-code.md)
+    - CLAUDE_CODE_OAUTH_TOKEN
   # Put ~/.hermes/bin first so bare `notion-cli` works in the sandbox
   docker_env:
     PATH: "/root/.hermes/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin"

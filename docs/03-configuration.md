@@ -81,6 +81,7 @@ After `make push-config`, re-run **`make cron-push`** if you changed `cron/jobs.
 | `VOICE_TOOLS_OPENAI_KEY` | no | Cloud STT/TTS |
 | `GROQ_API_KEY` | no | Groq Whisper STT |
 | `GITHUB_TOKEN` | no | Skills hub rate limits |
+| `CLAUDE_CODE_OAUTH_TOKEN` | no | Claude Code CLI in the sandbox, from `claude setup-token`. Forwarded via `docker_forward_env`. See [claude-code](tools/claude-code.md) |
 
 Full upstream list: [Environment variables](https://hermes-agent.nousresearch.com/docs/reference/environment-variables).
 

@@ -201,3 +201,11 @@ def test_mnemosyne_embedding_model_override_is_copied() -> None:
     _, parsed = run_filter({**REQUIRED, "MNEMOSYNE_EMBEDDING_MODEL": "openai/text-embedding-3-large"})
     assert parsed["MNEMOSYNE_EMBEDDING_MODEL"] == "openai/text-embedding-3-large"
     assert parsed["MNEMOSYNE_EMBEDDING_API_KEY"] == REQUIRED["OPENROUTER_API_KEY"]
+
+
+def test_claude_code_token_forwarded_only_when_set() -> None:
+    _, parsed = run_filter(REQUIRED)
+    assert "CLAUDE_CODE_OAUTH_TOKEN" not in parsed
+    _, parsed = run_filter({**REQUIRED, "CLAUDE_CODE_OAUTH_TOKEN": "test-claude"})
+    assert parsed["CLAUDE_CODE_OAUTH_TOKEN"] == "test-claude"
+    assert "ANTHROPIC_API_KEY" not in parsed

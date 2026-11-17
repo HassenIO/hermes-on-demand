@@ -11,6 +11,7 @@ Each tool gets its own page under `docs/tools/`. Code and compose files live nex
 | Mnemosyne (external memory) | [mnemosyne.md](mnemosyne.md) | `./scripts/deploy.sh --mnemosyne` |
 | Agent-Reach (platform web CLIs) | [agent-reach.md](agent-reach.md) | `./scripts/deploy.sh --agent-reach` |
 | Notion (REST CLI + reports) | [notion.md](notion.md) | `make setup-notion` |
+| Claude Code CLI (coding delegate) | [claude-code.md](claude-code.md) | `make setup-agent-reach` (image) + `make push-config` |
 
 Extension registry: [extensions/registry.yaml](../../extensions/registry.yaml).
 
