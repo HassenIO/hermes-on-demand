@@ -79,6 +79,20 @@ hermes auth status anthropic   # logged in
 - Model id exact: `claude-opus-5-5` (not the OpenRouter `anthropic/...` form)
 - Cron or embeddings failing instead? Those use OpenRouter: check `OPENROUTER_API_KEY` in `~/.hermes/.env`
 
+## Browser logins: vault `Permission denied`
+
+Hermes cannot show a masked password prompt from Telegram or Discord, so save site logins on the VPS. Run it as the `hermes` user:
+
+```bash
+docker exec -it -u hermes hermes hermes vault add
+```
+
+Without `-u hermes`, `docker exec` runs as root. The vault files end up owned by root, and the gateway fails with `Permission denied: '/opt/data/vault/vault.json.enc'`. Fix the ownership, then reply in the thread:
+
+```bash
+docker exec -u root hermes chown hermes:hermes /opt/data/vault/vault.json.enc /opt/data/vault/vault.key
+```
+
 ## Docker terminal failures
 
 ```bash
