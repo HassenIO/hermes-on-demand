@@ -63,9 +63,18 @@ Format details: [tools/memory-profile.md](tools/memory-profile.md).
 
 ```bash
 # after editing artifacts/
-./scripts/deploy.sh --artifacts
+make sync
 # then /new in Telegram
 ```
+
+Hermes writes to `USER.md` and `MEMORY.md` at runtime.
+`./scripts/deploy.sh --artifacts` (`make push-artifacts`) overwrites those edits.
+`make sync` runs `scripts/artifacts-sync.sh`, a three-way merge per file, like git.
+The merge base is the last synced copy in `.hermes-setup/artifacts/` (gitignored), seeded on first run from `~/hermes-setup/artifacts/` on the VPS.
+Remote-only changes are pulled into `artifacts/`, local-only changes are pushed, and changes on both sides go through `git merge-file`.
+A conflict leaves git markers in the local file and pushes nothing.
+It pushes through `deploy.sh --artifacts` only when a local file differs from the live one, and refuses while conflict markers remain.
+`make push-config` and `make update` still reinstall `artifacts/` as is, so run `make sync` first.
 
 ## Hermes upgrades (keep our Docker fix)
 

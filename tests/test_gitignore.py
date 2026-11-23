@@ -26,6 +26,7 @@ def test_runtime_copies_and_env_are_ignored() -> None:
     assert ignored("cron/jobs.json")
     assert ignored("artifacts/USER.md")
     assert ignored("artifacts/nope.md")
+    assert ignored(".hermes-setup/artifacts/USER.md")
 
 
 def test_readme_in_those_trees_is_not_ignored() -> None:
