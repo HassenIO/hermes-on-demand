@@ -9,13 +9,14 @@ ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 DEPLOY := $(ROOT)/scripts/deploy.sh
 
 .PHONY: help check-env lint test install-hooks ssh skills-pull skills-push cron-pull cron-push \
-	deploy full push-config push-artifacts health update s3-snapshot \
+	deploy full push-config push-artifacts sync health update s3-snapshot \
 	setup-firecrawl setup-mnemosyne setup-agent-reach setup-notion
 
 SKILLS_PULL := $(ROOT)/scripts/skills-pull.sh
 SKILLS_PUSH := $(ROOT)/scripts/skills-push.sh
 CRON_PULL := $(ROOT)/scripts/cron-pull.sh
 CRON_PUSH := $(ROOT)/scripts/cron-push.sh
+ARTIFACTS_SYNC := $(ROOT)/scripts/artifacts-sync.sh
 
 # ── Primary ───────────────────────────────────────────────────────────
 
@@ -26,6 +27,7 @@ help: ## Show this help
 	@echo "  make deploy            Full bootstrap / refresh stack"
 	@echo "  make push-config       Push .env + config.yaml + artifacts, restart"
 	@echo "  make push-artifacts    Push seeds; also syncs payload, timezone, restarts gateway"
+	@echo "  make sync              Git-style merge of artifacts with the VPS, push if needed"
 	@echo "  make health            Remote healthcheck"
 	@echo "  make update            hermes update + repairs"
 	@echo "  make ssh               Interactive SSH to TARGET_HOST"
@@ -99,6 +101,9 @@ push-config: check-env ## Push secrets + config.yaml + artifacts; restart gatewa
 
 push-artifacts: check-env ## Push profile seeds; also syncs payload, applies timezone, restarts gateway
 	@$(DEPLOY) --artifacts
+
+sync: check-env ## Three-way merge ./artifacts with live VPS files; push only when local changed
+	@bash "$(ARTIFACTS_SYNC)"
 
 health: check-env ## Remote healthcheck
 	@$(DEPLOY) --health

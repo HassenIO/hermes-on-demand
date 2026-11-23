@@ -41,6 +41,7 @@ Run from the repo root. Targets that talk to the VPS require a filled `.env`. `m
 | **`make deploy`** | Full remote bootstrap / refresh default stack |
 | **`make push-config`** | Push secrets + `config.yaml` + artifacts; restart gateway |
 | **`make push-artifacts`** | Push SOUL / USER / MEMORY / CV only |
+| **`make sync`** | Git-style merge of artifacts with the live VPS files; push only when local changed |
 | **`make health`** | Remote healthcheck |
 | **`make update`** | `hermes update` + Docker patch + extension refresh |
 | **`make s3-snapshot`** | Mirror VPS custom skills + cron to S3 |
@@ -48,7 +49,7 @@ Run from the repo root. Targets that talk to the VPS require a filled `.env`. `m
 ```bash
 make deploy           # after cloning or big stack changes
 make push-config      # after editing .env or config/config.yaml.example (e.g. model)
-make push-artifacts   # after editing artifacts/*.md
+make sync             # after editing artifacts/*.md (keeps Hermes's own edits)
 make health           # is the VPS healthy?
 make update           # upgrade Hermes on the VPS safely
 ```
@@ -93,7 +94,7 @@ Equivalent raw entrypoint (same flags): `./scripts/deploy.sh [--config-only|…]
 **Update profile / CV**
 
 1. Edit `artifacts/USER.md`, `SOUL.md`, `MEMORY.md`, or `CV.md`
-2. `make push-artifacts`
+2. `make sync` (merges Hermes's runtime edits, pushes yours)
 3. Telegram: `/new`
 
 **Rotate secrets (bot token, OpenRouter key)**

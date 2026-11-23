@@ -10,6 +10,9 @@ __pycache__/
 .venv/
 *.egg-info/
 
+# TODO for work
+TODO.md
+
 # Runtime copies. Only README.md in these trees is committed.
 /skills/**
 !/skills/**/
@@ -20,3 +23,6 @@ __pycache__/
 /artifacts/**
 !/artifacts/**/
 !/artifacts/**/README.md
+
+# Local merge base for make sync. Last synced artifacts.
+/.hermes-setup/
