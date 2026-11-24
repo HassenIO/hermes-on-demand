@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Runs ON the VPS. Add every key below "# @hermes-tools" in ~/.hermes/.env to
-# terminal.docker_forward_env in ~/.hermes/config.yaml. Names only, never values.
+# Runs ON the VPS. Add every key between "# @hermes-tools" and
+# "# @hermes-tools-end" in ~/.hermes/.env to terminal.docker_forward_env in
+# ~/.hermes/config.yaml. Names only, never values.
 # Idempotent. Run after config.yaml is written from config.yaml.example.
 set -euo pipefail
 
@@ -20,7 +21,7 @@ import re
 import sys
 from pathlib import Path
 
-MARKER = "# @hermes-tools"
+MARKER, END_MARKER = "# @hermes-tools", "# @hermes-tools-end"
 env_path, cfg_path = Path(sys.argv[1]), Path(sys.argv[2])
 
 keys, in_section = [], False
@@ -29,6 +30,8 @@ for raw in env_path.read_text().splitlines():
     if line == MARKER:
         in_section = True
         continue
+    if line == END_MARKER:
+        break
     if in_section and "=" in line and not line.startswith("#"):
         key = line.split("=", 1)[0].strip()
         if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", key) and key not in keys:
@@ -43,23 +46,33 @@ if term is None:
     raise SystemExit(0)
 
 end = next((i for i in range(term + 1, len(lines)) if re.match(r"\S", lines[i])), len(lines))
-fwd = next((i for i in range(term + 1, end) if re.match(r"  docker_forward_env:\s*$", lines[i])), None)
+fwd = next((i for i in range(term + 1, end) if re.match(r"( +)docker_forward_env:\s*$", lines[i])), None)
 if fwd is None:
     lines.insert(term + 1, "  docker_forward_env:\n")
     fwd = term + 1
+key_indent = len(lines[fwd]) - len(lines[fwd].lstrip(" "))
 
-pos, present = fwd + 1, set()
+# Items may sit deeper than the key (config.yaml.example) or at the same
+# indent (yaml.safe_dump, e.g. after notion-up). Insert with the same indent.
+item_re = re.compile(r"( *)- *(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\2\s*$")
+pos, present, item_indent = fwd + 1, set(), None
 while pos < len(lines):
-    m = re.match(r"    - (\S+)\s*$", lines[pos])
-    if m:
-        present.add(m.group(1))
-    elif not re.match(r"    #", lines[pos]):
+    line = lines[pos]
+    m = item_re.match(line)
+    indent = len(line) - len(line.lstrip(" "))
+    if m and indent >= key_indent and (item_indent is None or indent == item_indent):
+        item_indent = indent
+        present.add(m.group(3))
+    elif not (line.lstrip().startswith("#") and indent > key_indent):
         break
     pos += 1
+if item_indent is None:
+    item_indent = key_indent + 2
 
 missing = [k for k in keys if k not in present]
 if missing:
-    lines[pos:pos] = [f"    - {k}\n" for k in missing]
+    # Quoted so YAML never reads a name like ON, TRUE or NULL as a bool/null.
+    lines[pos:pos] = [f'{" " * item_indent}- "{k}"\n' for k in missing]
     with cfg_path.open("w") as fh:
         fh.writelines(lines)
 print(f"==> sandbox env: {len(keys)} tool key(s), {len(missing)} added to docker_forward_env")

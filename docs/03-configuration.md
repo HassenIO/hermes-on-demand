@@ -94,7 +94,8 @@ SOME_TOOL_API_KEY=...
 ```
 
 - The marker is the exact line `# @hermes-tools`. The section runs to the end of the file.
-- Every non-empty key below it is written to VPS `~/.hermes/.env`.
+- Every non-empty key below it is written to VPS `~/.hermes/.env`, between `# @hermes-tools` and a generated `# @hermes-tools-end` line. Lines that VPS setup scripts append later stay outside the section.
+- Values are read from the file, parsed like the rest of `.env` (quotes stripped, `export` allowed, last assignment wins). They are never run as shell.
 - The same key names are added to `terminal.docker_forward_env` on the VPS by `scripts/remote/apply-sandbox-env.sh`, so the sandbox sees them. Only names go into `config.yaml`, never values.
 - No code change is needed per tool. Run `make push-config`, then `/new`.
 - Deploy refuses reserved names below the marker: `TARGET_*`, `SSH_*`, `SKIP_*`, `AWS_*`, `S3_*`, `TELEGRAM_*`, `DISCORD_*`, `GATEWAY_*`, `OPENROUTER_*`, `NOTION_*`, `HERMES_*`, `MNEMOSYNE_*`, `ALLOW_LOCAL_TARGET`, `REMOTE_DIR`, `PIN_CRON_FORCE`, `LLM_MODEL`, `FIRECRAWL_MODE`, `TIMEZONE`, `TZ`. Keep those above the marker.

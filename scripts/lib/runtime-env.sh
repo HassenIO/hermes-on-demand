@@ -23,19 +23,24 @@ refuse_local_target() {
 }
 
 # Keys below this exact line in ENV_FILE are pushed to the VPS and forwarded
-# into the agent sandbox. scripts/remote/apply-sandbox-env.sh reads the same
-# marker back from ~/.hermes/.env.
+# into the agent sandbox. build_runtime_env closes the section with
+# TOOLS_END_MARKER so lines that VPS scripts append later stay outside it.
+# scripts/remote/apply-sandbox-env.sh reads the section back from ~/.hermes/.env.
 TOOLS_MARKER="# @hermes-tools"
+TOOLS_END_MARKER="# @hermes-tools-end"
 
 # Names that must never reach the sandbox or that core handling already owns.
 TOOLS_RESERVED_RE='^(TARGET_|SSH_|SKIP_|AWS_|S3_|TELEGRAM_|DISCORD_|GATEWAY_|OPENROUTER_|NOTION_|HERMES_|MNEMOSYNE_)|^(ALLOW_LOCAL_TARGET|REMOTE_DIR|PIN_CRON_FORCE|LLM_MODEL|FIRECRAWL_MODE|TIMEZONE|TZ)$'
 
-# Key names after TOOLS_MARKER in a dotenv file, one per line. No file or no
-# marker prints nothing. Dies on a reserved or malformed name.
-tool_env_keys() {
+# KEY=value lines after TOOLS_MARKER in a dotenv file, read from the file and
+# not from the shell, parsed like load_dotenv. Last assignment wins; empty
+# values are dropped. No file or no marker prints nothing. Dies on a reserved
+# or malformed name.
+tool_env_lines() {
   local file="${1:-}"
   [[ -n "$file" && -f "$file" ]] || return 0
-  local line key in_section=0
+  local line key val i found in_section=0
+  local -a keys=() vals=()
   while IFS= read -r line || [[ -n "$line" ]]; do
     line="${line#"${line%%[![:space:]]*}"}"
     line="${line%"${line##*[![:space:]]}"}"
@@ -48,30 +53,46 @@ tool_env_keys() {
     [[ "$line" == export\ * ]] && line="${line#export }"
     [[ "$line" == *=* ]] || continue
     key="${line%%=*}"
+    val="${line#*=}"
     key="${key%"${key##*[![:space:]]}"}"
+    val="${val#"${val%%[![:space:]]*}"}"
+    if [[ "$val" == \"*\" && "$val" == *\" ]]; then
+      val="${val:1:${#val}-2}"
+    elif [[ "$val" == \'*\' && "$val" == *\' ]]; then
+      val="${val:1:${#val}-2}"
+    fi
     [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || die "invalid key below '$TOOLS_MARKER': $key"
     [[ "$key" =~ $TOOLS_RESERVED_RE ]] && die "$key is reserved; move it above '$TOOLS_MARKER' in .env"
-    printf '%s\n' "$key"
+    found=0
+    for i in "${!keys[@]}"; do
+      if [[ "${keys[$i]}" == "$key" ]]; then
+        vals[$i]="$val"
+        found=1
+      fi
+    done
+    ((found)) || { keys+=("$key"); vals+=("$val"); }
   done <"$file"
+  for i in "${!keys[@]}"; do
+    [[ -n "${vals[$i]}" ]] && printf '%s=%s\n' "${keys[$i]}" "${vals[$i]}"
+  done
   return 0
 }
 
 # Filtered Hermes runtime env. Writes to stdout. Does not SSH.
-# Core keys first, then the tools section from ENV_FILE under TOOLS_MARKER.
+# Core keys first, then the tools section from ENV_FILE between the markers.
 build_runtime_env() {
-  local core keys key
+  local core tools
   core="$(_build_core_runtime_env)"
-  keys="$(tool_env_keys "${ENV_FILE:-}")"
-  if [[ -z "$keys" ]]; then
+  tools="$(tool_env_lines "${ENV_FILE:-}")"
+  if [[ -z "$tools" ]]; then
     printf '%s\n' "$core"
     return 0
   fi
   # A key in the tools section is emitted there only, so the sandbox gets it.
-  grep -v -E "^($(paste -sd'|' - <<<"$keys"))=" <<<"$core" || true
+  grep -v -E "^($(cut -d= -f1 <<<"$tools" | paste -sd'|' -))=" <<<"$core" || true
   echo "$TOOLS_MARKER"
-  while IFS= read -r key; do
-    [[ -n "${!key:-}" ]] && echo "${key}=${!key}"
-  done <<<"$keys"
+  printf '%s\n' "$tools"
+  echo "$TOOLS_END_MARKER"
   return 0
 }
 

@@ -23,11 +23,9 @@ fi
 
 command -v hermes >/dev/null 2>&1 || die "hermes not on PATH"
 
+# load_dotenv, not source: values are data and must never run as shell.
 if [[ -f "$ENV_FILE" ]]; then
-  set -a
-  # shellcheck disable=SC1090
-  source "$ENV_FILE"
-  set +a
+  load_dotenv "$ENV_FILE"
 fi
 
 PAYLOAD_ENV="${REMOTE_ENV:-$(cd "$SCRIPT_DIR/../.." && pwd)/remote.env}"
