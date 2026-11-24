@@ -100,6 +100,7 @@ fi
 
 log "Writing $HERMES_HOME/config.yaml"
 install -m 644 "$CONFIG_SRC" "$HERMES_HOME/config.yaml"
+bash "$SCRIPT_DIR/apply-sandbox-env.sh"
 
 # Persona + user profile from repo artifacts/
 if [[ -f "$SCRIPT_DIR/install-artifacts.sh" ]]; then

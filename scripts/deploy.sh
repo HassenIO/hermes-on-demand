@@ -221,6 +221,7 @@ HERMES_HOME="\${HERMES_HOME:-\$HOME/.hermes}"
 mkdir -p "\$HERMES_HOME"
 install -m 600 '$REMOTE_DIR/remote.env' "\$HERMES_HOME/.env"
 install -m 644 '$REMOTE_DIR/config/config.yaml.example' "\$HERMES_HOME/config.yaml"
+bash '$REMOTE_DIR/scripts/remote/apply-sandbox-env.sh'
 bash '$REMOTE_DIR/scripts/remote/install-artifacts.sh'
 bash '$REMOTE_DIR/scripts/remote/patch-hermes-docker.sh' 2>/dev/null || true
 if [[ -L "\$HOME/.local/bin/hermes" ]] || [[ ! -e "\$HOME/.local/bin/hermes" ]]; then

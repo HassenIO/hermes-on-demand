@@ -211,8 +211,62 @@ def test_claude_code_token_forwarded_only_when_set() -> None:
     assert "ANTHROPIC_API_KEY" not in parsed
 
 
-def test_typeform_token_forwarded_only_when_set() -> None:
-    _, parsed = run_filter(REQUIRED)
-    assert "TYPEFORM_TOKEN" not in parsed
-    _, parsed = run_filter({**REQUIRED, "TYPEFORM_TOKEN": "test-typeform"})
-    assert parsed["TYPEFORM_TOKEN"] == "test-typeform"
+def write_env_file(tmp_path: Path, body: str) -> dict[str, str]:
+    """Write a dotenv file and return the env deploy.sh would have after load_dotenv."""
+    path = tmp_path / ".env"
+    path.write_text(body)
+    loaded: dict[str, str] = {"ENV_FILE": str(path)}
+    for line in body.splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            key, value = line.split("=", 1)
+            loaded[key] = value
+    return loaded
+
+
+def run_filter_raw(extra: dict[str, str]) -> subprocess.CompletedProcess[str]:
+    script = f'set -euo pipefail; source "{ROOT}/scripts/lib/runtime-env.sh"; build_runtime_env'
+    env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "HOME": os.environ.get("HOME", "/tmp")}
+    env.update(extra)
+    return subprocess.run(["bash", "-c", script], cwd=ROOT, env=env, capture_output=True, text=True)
+
+
+def test_tools_section_keys_are_forwarded_after_marker(tmp_path: Path) -> None:
+    loaded = write_env_file(
+        tmp_path,
+        "ABOVE_ONLY=stay-local\n# @hermes-tools\nSOME_TOOL_API_KEY=tool-secret\n\nEMPTY_TOOL=\n",
+    )
+    stdout, parsed = run_filter({**REQUIRED, **DEPLOY_ONLY, **loaded})
+    assert parsed["SOME_TOOL_API_KEY"] == "tool-secret"
+    assert "EMPTY_TOOL" not in parsed
+    assert "ABOVE_ONLY" not in parsed
+    assert stdout.splitlines()[0] == HEADER
+    lines = stdout.splitlines()
+    assert lines.index("# @hermes-tools") < lines.index("SOME_TOOL_API_KEY=tool-secret")
+    assert_deploy_keys_absent(parsed)
+
+
+def test_tools_section_owns_a_core_optional_key(tmp_path: Path) -> None:
+    loaded = write_env_file(tmp_path, "# @hermes-tools\nGITHUB_TOKEN=gh-secret\n")
+    stdout, parsed = run_filter({**REQUIRED, **loaded})
+    assert parsed["GITHUB_TOKEN"] == "gh-secret"
+    lines = stdout.splitlines()
+    assert lines.count("GITHUB_TOKEN=gh-secret") == 1
+    assert lines.index("# @hermes-tools") < lines.index("GITHUB_TOKEN=gh-secret")
+
+
+def test_no_marker_keeps_previous_output(tmp_path: Path) -> None:
+    baseline, _ = run_filter(REQUIRED)
+    loaded = write_env_file(tmp_path, "SOME_TOOL_API_KEY=tool-secret\n")
+    stdout, parsed = run_filter({**REQUIRED, **loaded})
+    assert stdout == baseline
+    assert "SOME_TOOL_API_KEY" not in parsed
+
+
+def test_tools_section_refuses_reserved_keys(tmp_path: Path) -> None:
+    for key in ("AWS_SECRET_ACCESS_KEY", "TELEGRAM_BOT_TOKEN", "OPENROUTER_API_KEY", "SSH_IDENTITY_FILE", "PIN_CRON_FORCE"):
+        loaded = write_env_file(tmp_path, f"# @hermes-tools\n{key}=x\n")
+        result = run_filter_raw({**REQUIRED, **loaded})
+        assert result.returncode != 0, key
+        assert f"{key} is reserved" in result.stderr
+        assert "=x" not in result.stdout
