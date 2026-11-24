@@ -71,6 +71,7 @@ build_runtime_env() {
   [[ -n "${GROQ_API_KEY:-}" ]] && echo "GROQ_API_KEY=${GROQ_API_KEY}"
   [[ -n "${ELEVENLABS_API_KEY:-}" ]] && echo "ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}"
   [[ -n "${GITHUB_TOKEN:-}" ]] && echo "GITHUB_TOKEN=${GITHUB_TOKEN}"
+  [[ -n "${TYPEFORM_TOKEN:-}" ]] && echo "TYPEFORM_TOKEN=${TYPEFORM_TOKEN}"
   # Claude Code CLI in the sandbox (claude setup-token). Subscription, not ANTHROPIC_API_KEY.
   [[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]] && echo "CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN}"
   # Prefer plain api.telegram.org (avoids slow DoH fallback-IP path on some VPS networks)

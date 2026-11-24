@@ -28,6 +28,7 @@ terminal:
   docker_shm_size: 64m
   docker_forward_env:
     - GITHUB_TOKEN
+    - TYPEFORM_TOKEN
     - NOTION_API_KEY
     - NOTION_TOKEN
     - NOTION_REPORTS_PARENT_PAGE_ID

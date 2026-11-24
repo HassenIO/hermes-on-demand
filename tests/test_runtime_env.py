@@ -209,3 +209,10 @@ def test_claude_code_token_forwarded_only_when_set() -> None:
     _, parsed = run_filter({**REQUIRED, "CLAUDE_CODE_OAUTH_TOKEN": "test-claude"})
     assert parsed["CLAUDE_CODE_OAUTH_TOKEN"] == "test-claude"
     assert "ANTHROPIC_API_KEY" not in parsed
+
+
+def test_typeform_token_forwarded_only_when_set() -> None:
+    _, parsed = run_filter(REQUIRED)
+    assert "TYPEFORM_TOKEN" not in parsed
+    _, parsed = run_filter({**REQUIRED, "TYPEFORM_TOKEN": "test-typeform"})
+    assert parsed["TYPEFORM_TOKEN"] == "test-typeform"
