@@ -80,8 +80,26 @@ After `make push-config`, re-run **`make cron-push`** if you changed `cron/jobs.
 | `NOTION_TOKEN` | no | Alias of `NOTION_API_KEY`, set automatically when both Notion vars are present. Not an MCP credential |
 | `VOICE_TOOLS_OPENAI_KEY` | no | Cloud STT/TTS |
 | `GROQ_API_KEY` | no | Groq Whisper STT |
-| `GITHUB_TOKEN` | no | Skills hub rate limits |
+| `GITHUB_TOKEN` | no | Skills hub rate limits. Put it in the [tool secrets section](#tool-secrets-section-hermes-tools) |
 | `CLAUDE_CODE_OAUTH_TOKEN` | no | Claude Code CLI in the sandbox, from `claude setup-token`. Forwarded via `docker_forward_env`. See [claude-code](tools/claude-code.md) |
+
+### Tool secrets section (`# @hermes-tools`)
+
+Any key a skill needs, for any tool, goes in one section at the end of `.env`:
+
+```bash
+# @hermes-tools
+GITHUB_TOKEN=...
+SOME_TOOL_API_KEY=...
+```
+
+- The marker is the exact line `# @hermes-tools`. The section runs to the end of the file.
+- Every non-empty key below it is written to VPS `~/.hermes/.env`, between `# @hermes-tools` and a generated `# @hermes-tools-end` line. Lines that VPS setup scripts append later stay outside the section.
+- Values are read from the file, parsed like the rest of `.env` (quotes stripped, `export` allowed, last assignment wins). They are never run as shell.
+- The same key names are added to `terminal.docker_forward_env` on the VPS by `scripts/remote/apply-sandbox-env.sh`, so the sandbox sees them. Only names go into `config.yaml`, never values.
+- No code change is needed per tool. Run `make push-config`, then `/new`.
+- Deploy refuses reserved names below the marker: `TARGET_*`, `SSH_*`, `SKIP_*`, `AWS_*`, `S3_*`, `TELEGRAM_*`, `DISCORD_*`, `GATEWAY_*`, `OPENROUTER_*`, `NOTION_*`, `HERMES_*`, `MNEMOSYNE_*`, `ALLOW_LOCAL_TARGET`, `REMOTE_DIR`, `PIN_CRON_FORCE`, `LLM_MODEL`, `FIRECRAWL_MODE`, `TIMEZONE`, `TZ`. Keep those above the marker.
+- Without the marker, nothing changes.
 
 Full upstream list: [Environment variables](https://hermes-agent.nousresearch.com/docs/reference/environment-variables).
 
@@ -114,7 +132,7 @@ terminal:
 ```
 
 - Agent shell commands run inside Docker, not as unrestricted host root
-- Host `~/.hermes/.env` secrets are **not** forwarded into the container unless listed under `docker_forward_env`
+- Host `~/.hermes/.env` secrets are **not** forwarded into the container unless listed under `docker_forward_env`. Keys in the [tool secrets section](#tool-secrets-section-hermes-tools) are added there on deploy
 - If the agent generates files for Telegram `MEDIA:`, mount a host-visible path (see [Telegram docs — Docker MEDIA](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/telegram))
 
 ## Applying config changes

@@ -209,3 +209,92 @@ def test_claude_code_token_forwarded_only_when_set() -> None:
     _, parsed = run_filter({**REQUIRED, "CLAUDE_CODE_OAUTH_TOKEN": "test-claude"})
     assert parsed["CLAUDE_CODE_OAUTH_TOKEN"] == "test-claude"
     assert "ANTHROPIC_API_KEY" not in parsed
+
+
+def run_deploy_filter(tmp_path: Path, body: str) -> subprocess.CompletedProcess[str]:
+    """Same path as deploy.sh: load_dotenv on the file, then build_runtime_env."""
+    path = tmp_path / ".env"
+    path.write_text(body)
+    script = f"""
+set -euo pipefail
+source "{ROOT}/scripts/lib/runtime-env.sh"
+ENV_FILE="{path}"
+load_dotenv "$ENV_FILE"
+build_runtime_env
+"""
+    env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "HOME": os.environ.get("HOME", "/tmp")}
+    return subprocess.run(["bash", "-c", script], cwd=ROOT, env=env, capture_output=True, text=True)
+
+
+def deploy_filter(tmp_path: Path, body: str) -> tuple[list[str], dict[str, str]]:
+    result = run_deploy_filter(tmp_path, body)
+    assert result.returncode == 0, result.stderr
+    lines = result.stdout.splitlines()
+    parsed = dict(line.split("=", 1) for line in lines if line and not line.startswith("#"))
+    return lines, parsed
+
+
+BASE_ENV = "".join(f"{k}={v}\n" for k, v in {**REQUIRED, **DEPLOY_ONLY}.items())
+
+
+def tools_section(lines: list[str]) -> list[str]:
+    return lines[lines.index("# @hermes-tools") + 1 : lines.index("# @hermes-tools-end")]
+
+
+def test_tools_section_keys_are_forwarded_between_markers(tmp_path: Path) -> None:
+    lines, parsed = deploy_filter(
+        tmp_path,
+        BASE_ENV + "ABOVE_ONLY=stay-local\n# @hermes-tools\nSOME_TOOL_API_KEY=tool-secret\n\nEMPTY_TOOL=\n",
+    )
+    assert lines[0] == HEADER
+    assert tools_section(lines) == ["SOME_TOOL_API_KEY=tool-secret"]
+    assert lines[-1] == "# @hermes-tools-end"
+    assert "ABOVE_ONLY" not in parsed
+    assert "EMPTY_TOOL" not in parsed
+    assert_deploy_keys_absent(parsed)
+
+
+def test_tools_section_parses_like_load_dotenv(tmp_path: Path) -> None:
+    lines, _ = deploy_filter(
+        tmp_path,
+        BASE_ENV
+        + "# @hermes-tools\n"
+        + 'export EXPORTED_KEY="double quoted"\n'
+        + "SINGLE_KEY='a $(not run) b'\n"
+        + "DUP_KEY=first\nDUP_KEY=second\n",
+    )
+    assert tools_section(lines) == [
+        "EXPORTED_KEY=double quoted",
+        "SINGLE_KEY=a $(not run) b",
+        "DUP_KEY=second",
+    ]
+
+
+def test_tools_values_come_from_the_file_not_shell_locals(tmp_path: Path) -> None:
+    # Names that match locals in build_runtime_env / tool_env_lines.
+    body = BASE_ENV + "# @hermes-tools\ncore=c-val\ntools=t-val\nkey=k-val\nkeys=ks-val\nline=l-val\n"
+    lines, _ = deploy_filter(tmp_path, body)
+    assert tools_section(lines) == ["core=c-val", "tools=t-val", "key=k-val", "keys=ks-val", "line=l-val"]
+    assert not any(l.startswith(("TELEGRAM_", "AWS_")) for l in tools_section(lines))
+
+
+def test_tools_section_owns_a_core_optional_key(tmp_path: Path) -> None:
+    lines, parsed = deploy_filter(tmp_path, BASE_ENV + "# @hermes-tools\nGITHUB_TOKEN=gh-secret\n")
+    assert parsed["GITHUB_TOKEN"] == "gh-secret"
+    assert lines.count("GITHUB_TOKEN=gh-secret") == 1
+    assert tools_section(lines) == ["GITHUB_TOKEN=gh-secret"]
+
+
+def test_no_marker_keeps_previous_output(tmp_path: Path) -> None:
+    baseline, _ = run_filter({**REQUIRED, **DEPLOY_ONLY})
+    result = run_deploy_filter(tmp_path, BASE_ENV + "SOME_TOOL_API_KEY=tool-secret\n")
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == baseline
+
+
+def test_tools_section_refuses_reserved_keys(tmp_path: Path) -> None:
+    for key in ("AWS_SECRET_ACCESS_KEY", "TELEGRAM_BOT_TOKEN", "OPENROUTER_API_KEY", "SSH_IDENTITY_FILE", "PIN_CRON_FORCE"):
+        result = run_deploy_filter(tmp_path, BASE_ENV + f"# @hermes-tools\n{key}=x\n")
+        assert result.returncode != 0, key
+        assert f"{key} is reserved" in result.stderr
+        assert "=x" not in result.stdout

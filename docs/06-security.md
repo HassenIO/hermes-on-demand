@@ -25,6 +25,7 @@ Hermes with terminal tools can run commands. On a VPS that means anyone who can 
 ## Docker backend
 
 - Prefer not listing API keys in `terminal.docker_forward_env` unless a skill truly needs them inside the sandbox
+- Every key below `# @hermes-tools` in `.env` is forwarded into the sandbox. Put only keys a skill needs there. Deploy refuses reserved names (`AWS_*`, bot tokens, `OPENROUTER_*`, `TARGET_*`, `SSH_*`, ...) in that section
 - Keep Docker socket access limited to the deploy user
 - Understand that `docker` group membership is effectively root-equivalent on the host — only trusted users
 
