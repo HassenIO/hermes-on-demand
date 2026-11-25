@@ -27,7 +27,7 @@ Ask the bot: "Use claude-code to run `claude auth status --text` and tell me the
 ## Limits
 
 - **Root sandbox.** The container runs as root, and the skill only uses `--dangerously-skip-permissions` for non-root users. Expect `--permission-mode acceptEdits`, `--allowedTools`, `--max-turns`, and `--max-budget-usd` instead.
-- **Resources.** `container_memory: 768` and `timeout: 180` are tight for long runs. Raise them in `config/config.yaml.example` if the VPS has headroom, or keep tasks small.
+- **Resources.** `container_memory: 1280` fits one agent with its install, build, and tests. `timeout: 180` caps foreground commands only; run long agents in the background, as the [factory](factory.md) skill does.
 - **Usage.** Runs count against the same Claude subscription limits as the Hermes chat model.
 - **Exposure.** Anything in the sandbox can read the token. Rotate it with `claude setup-token` if it leaks, then `make push-config`.
 - **GitHub.** `GITHUB_TOKEN`, if set, is already forwarded, so `gh` and `git push` work from the sandbox.

@@ -19,8 +19,9 @@ terminal:
   timeout: 180
   lifetime_seconds: 300
   container_cpu: 1
-  # Keep low on small VPS (~1.5–2 GB host RAM). Raise on larger hosts.
-  container_memory: 768
+  # 1280 fits one factory agent (Claude Code + install/build/test) on a 1.6 GB host with swap.
+  # Raise on larger hosts. docs/tools/factory.md
+  container_memory: 1280
   container_disk: 10240
   container_persistent: true
   docker_network: true
@@ -36,6 +37,8 @@ terminal:
   # Put ~/.hermes/bin first so bare `notion-cli` works in the sandbox
   docker_env:
     PATH: "/root/.hermes/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin"
+    # Keeps .claude.json inside the shared /root/.claude mount (factory, docs/tools/factory.md)
+    CLAUDE_CONFIG_DIR: "/root/.claude"
   docker_volumes:
     - "/root/.hermes/cache/documents:/output"
     - "/root/.hermes/memories:/root/.hermes/memories:ro"
@@ -46,6 +49,9 @@ terminal:
     # Long-form content artifacts (newsletters, reports, ebooks) — writable
     - "/root/.hermes/content:/root/.hermes/content"
     - "/root/.agent-reach:/root/.agent-reach"
+    # Factory skill state and Claude Code sessions, shared by every sandbox (chat, cron). docs/tools/factory.md
+    - "/root/.hermes/factory:/root/.hermes/factory"
+    - "/root/.hermes/claude-code:/root/.claude"
 
 display:
   tool_progress: off
