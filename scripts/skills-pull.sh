@@ -62,11 +62,14 @@ mkdir -p "$EXTRACT"
 tar -xzf "$STAGING/skills.tgz" -C "$EXTRACT"
 
 mkdir -p "$DEST"
+# README.md files are committed docs, never in the archive: keep them.
 if command -v rsync >/dev/null 2>&1; then
-  rsync -a --delete "$EXTRACT/" "$DEST/"
+  rsync -a --delete --exclude 'README.md' "$EXTRACT/" "$DEST/"
 else
-  # Portable fallback: replace tree contents
-  find "$DEST" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+  # Everything but README.md (files and symlinks), then the folders left empty, so a
+  # path that changed from folder to file on the VPS can be copied over.
+  find "$DEST" -mindepth 1 ! -type d ! -name README.md -delete
+  find "$DEST" -mindepth 1 -depth -type d -empty -delete
   cp -R "$EXTRACT"/. "$DEST/"
 fi
 

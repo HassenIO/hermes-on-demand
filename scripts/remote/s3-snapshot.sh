@@ -77,6 +77,20 @@ stage_skills = Path(sys.argv[3])
 jobs = Path(sys.argv[4])
 manifest_path = Path(sys.argv[5])
 
+
+def is_builtin_dir(d: Path) -> bool:
+    """A builtin skill folder. A custom package that contains one must not copy it."""
+    md = d / "SKILL.md"
+    if not md.is_file():
+        return False
+    if d.name in bundled:
+        return True
+    try:
+        return builtin.is_dir() and (builtin / md.relative_to(home)).exists()
+    except ValueError:
+        return False
+
+
 def should_include(path: Path) -> bool:
     name = path.name
     if name.startswith("."):
@@ -85,10 +99,17 @@ def should_include(path: Path) -> bool:
         return False
     return True
 
+# Hermes lists synced builtins as "name:hash" lines. The builtin tree moves with the
+# install (~/.hermes/hermes-agent/skills today), so this manifest is the reliable record.
+bundled_file = home / ".bundled_manifest"
+bundled = {line.split(":", 1)[0].strip() for line in bundled_file.read_text().splitlines()} if bundled_file.is_file() else set()
+
 roots: list[Path] = []
 if home.is_dir():
     for skill_md in sorted(home.rglob("SKILL.md")):
         rel = skill_md.relative_to(home)
+        if skill_md.parent.name in bundled:
+            continue
         if builtin.is_dir() and (builtin / rel).exists():
             continue
         roots.append(skill_md.parent.resolve())
@@ -97,7 +118,9 @@ roots = sorted(set(roots), key=lambda p: str(p))
 copied = 0
 for root in roots:
     for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = sorted(d for d in dirnames if should_include(Path(d)))
+        dirnames[:] = sorted(
+            d for d in dirnames if should_include(Path(d)) and not is_builtin_dir(Path(dirpath) / d)
+        )
         for fn in sorted(filenames):
             fp = Path(dirpath) / fn
             if not should_include(fp) or not fp.is_file():

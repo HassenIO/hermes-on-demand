@@ -21,7 +21,7 @@ An empty custom-skill tree does **not** delete the remote `skills/` prefix. A mi
 - `~/.hermes/mnemosyne/` and any other SQLite
 - Session transcripts
 - `~/.hermes/.env`, local `.env`, bot tokens, API keys
-- Builtin skills under the Hermes install tree
+- Builtin skills: under the Hermes install tree, or listed in `~/.hermes/skills/.bundled_manifest` (Docker runtime)
 - Firecrawl / SearXNG data
 
 AWS keys are forwarded in the deploy payload (`remote.env`) so the VPS can upload. They are not listed in `terminal.docker_forward_env`, so the agent sandbox does not receive them. Do not put key values in git, docs, or `manifest.json`.

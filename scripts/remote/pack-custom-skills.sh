@@ -22,9 +22,16 @@ if not home.is_dir():
     print(f"ERROR: missing skills dir: {home}", file=sys.stderr)
     sys.exit(1)
 
+# Hermes lists synced builtins as "name:hash" lines. The builtin tree moves with the
+# install (~/.hermes/hermes-agent/skills today), so this manifest is the reliable record.
+manifest = home / ".bundled_manifest"
+bundled = {line.split(":", 1)[0].strip() for line in manifest.read_text().splitlines()} if manifest.is_file() else set()
+
 custom_roots: list[Path] = []
 for skill_md in sorted(home.rglob("SKILL.md")):
     rel = skill_md.relative_to(home)
+    if skill_md.parent.name in bundled:
+        continue
     if builtin.is_dir() and (builtin / rel).exists():
         continue
     custom_roots.append(skill_md.parent.resolve())
@@ -33,6 +40,20 @@ roots = sorted(set(custom_roots), key=lambda p: str(p))
 if not roots:
     out.write_bytes(b"")
     sys.exit(0)
+
+
+
+def is_builtin_dir(d: Path) -> bool:
+    """A builtin skill folder. A custom package that contains one must not copy it."""
+    md = d / "SKILL.md"
+    if not md.is_file():
+        return False
+    if d.name in bundled:
+        return True
+    try:
+        return builtin.is_dir() and (builtin / md.relative_to(home)).exists()
+    except ValueError:
+        return False
 
 
 def should_include(path: Path) -> bool:
@@ -50,7 +71,9 @@ with tarfile.open(out, mode="w:gz") as tar:
         rel_root = root.relative_to(home)
         print(rel_root.as_posix(), flush=True)
         for dirpath, dirnames, filenames in os.walk(root):
-            dirnames[:] = sorted(d for d in dirnames if should_include(Path(d)))
+            dirnames[:] = sorted(
+                d for d in dirnames if should_include(Path(d)) and not is_builtin_dir(Path(dirpath) / d)
+            )
             for fn in sorted(filenames):
                 fp = Path(dirpath) / fn
                 if not should_include(fp) or not fp.is_file():
