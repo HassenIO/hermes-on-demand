@@ -12,23 +12,36 @@ DEST="$CRON_DIR/jobs.json"
 
 [[ -f "$SRC" ]] || { echo "ERROR: missing $SRC" >&2; exit 1; }
 
-# Prefer Hermes venv so `import cron.jobs` works. The image venv path is
-# included because the install script's PATH prepend hides it inside a container.
+# Need a Python where `import cron.jobs` works. The current installer runs Hermes
+# on a managed Python and puts the checkout on sys.path through hermes_bootstrap;
+# older installs keep a venv. HERMES_AGENT_ROOT tells the job script which applies.
 PY=""
-for cand in \
-  /usr/local/lib/hermes-agent/venv/bin/python \
-  "${HERMES_HOME}/venv/bin/python" \
-  /opt/hermes/.venv/bin/python \
-  "$(command -v python3 || true)"
-do
-  if [[ -n "$cand" && -x "$cand" ]]; then
-    if "$cand" -c "import cron.jobs" 2>/dev/null; then
+HERMES_AGENT_ROOT=""
+RUNTIME_PY="$(hermes --print-runtime-command 2>/dev/null \
+  | python3 -c 'import json, sys; print(json.load(sys.stdin)[0])' 2>/dev/null || true)"
+if [[ -n "$RUNTIME_PY" && -x "$RUNTIME_PY" ]]; then
+  for root in "${HERMES_HOME}/hermes-agent" /usr/local/lib/hermes-agent; do
+    if "$RUNTIME_PY" -I -c 'import sys; sys.path.insert(0, sys.argv[1]); import hermes_bootstrap, cron.jobs' "$root" 2>/dev/null; then
+      PY="$RUNTIME_PY"
+      HERMES_AGENT_ROOT="$root"
+      break
+    fi
+  done
+fi
+if [[ -z "$PY" ]]; then
+  for cand in \
+    /usr/local/lib/hermes-agent/venv/bin/python \
+    "${HERMES_HOME}/venv/bin/python" \
+    "$(command -v python3 || true)"
+  do
+    if [[ -n "$cand" && -x "$cand" ]] && "$cand" -c "import cron.jobs" 2>/dev/null; then
       PY="$cand"
       break
     fi
-  fi
-done
+  done
+fi
 [[ -n "$PY" ]] || { echo "ERROR: no python with cron.jobs importable" >&2; exit 1; }
+export HERMES_AGENT_ROOT
 
 mkdir -p "$CRON_DIR"
 chmod 700 "$CRON_DIR" 2>/dev/null || true
@@ -43,7 +56,12 @@ fi
 
 "$PY" - "$SRC" <<'PY'
 import json
+import os
 import sys
+
+if os.environ.get("HERMES_AGENT_ROOT"):
+    sys.path.insert(0, os.environ["HERMES_AGENT_ROOT"])
+    import hermes_bootstrap  # noqa: F401  (puts Hermes dependencies on sys.path)
 from datetime import datetime, timezone
 from pathlib import Path
 

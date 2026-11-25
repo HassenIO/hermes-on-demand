@@ -5,8 +5,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../lib/common.sh
 source "$SCRIPT_DIR/../lib/common.sh"
-# shellcheck source=../lib/hermes-docker.sh
-source "$SCRIPT_DIR/../lib/hermes-docker.sh"
 
 PAYLOAD_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 FC_DIR="${PAYLOAD_DIR}/firecrawl"

@@ -5,8 +5,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../lib/common.sh
 source "$SCRIPT_DIR/../lib/common.sh"
-# shellcheck source=../lib/hermes-docker.sh
-source "$SCRIPT_DIR/../lib/hermes-docker.sh"
 
 export PATH="${HOME}/.local/bin:/usr/local/bin:${PATH}"
 HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
@@ -85,13 +83,26 @@ else
 fi
 
 if command -v hermes >/dev/null 2>&1; then
-  if run_in_gateway timeout 25 hermes doctor >/dev/null 2>&1; then
+  if timeout 25 hermes doctor >/dev/null 2>&1; then
     log "OK  hermes doctor"
   else
     warn "hermes doctor reported issues or timed out (non-fatal; gateway may still be fine)"
   fi
 fi
-if ! apply_gateway_health; then
+# One writer: a leftover gateway container would share this Hermes home.
+if hermes_container_present; then
+  warn "FAIL container hermes exists (old Docker gateway runtime); remove it, see docs/02-deploy.md"
+  failed=1
+fi
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+# The unit state decides. `hermes gateway status` exits 0 even when the service is
+# stopped, so its output is for diagnosis only.
+if systemctl --user is-active --quiet hermes-gateway 2>/dev/null; then
+  log "OK  gateway unit hermes-gateway active"
+  hermes gateway status 2>/dev/null || true
+else
+  warn "FAIL gateway unit hermes-gateway not active (journalctl --user -u hermes-gateway)"
+  hermes gateway status 2>/dev/null || true
   failed=1
 fi
 
@@ -135,7 +146,7 @@ if [[ -x "$VENV/bin/mnemosyne-hermes" ]]; then
   log "OK  Mnemosyne side-venv present ($VENV)"
   if command -v hermes >/dev/null 2>&1; then
     # Capture first: with pipefail, grep -q exits early and SIGPIPE fails the pipe.
-    mem_status="$(run_in_gateway hermes memory status 2>&1 || true)"
+    mem_status="$(hermes memory status 2>&1 || true)"
     if grep -qi 'Provider:.*mnemosyne' <<<"$mem_status"; then
       log "OK  memory.provider=mnemosyne"
     else
@@ -165,7 +176,7 @@ else
   warn "Agent-Reach skill missing (~/.hermes/skills/agent-reach/SKILL.md)"
 fi
 if command -v hermes >/dev/null 2>&1; then
-  img="$(run_in_gateway hermes config get terminal.docker_image 2>/dev/null || true)"
+  img="$(hermes config get terminal.docker_image 2>/dev/null || true)"
   if echo "$img" | grep -q 'agent-reach'; then
     log "OK  terminal.docker_image → agent-reach"
   elif [[ -n "$img" ]]; then

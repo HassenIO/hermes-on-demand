@@ -8,8 +8,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../lib/common.sh
 source "$SCRIPT_DIR/../lib/common.sh"
-# shellcheck source=../lib/hermes-docker.sh
-source "$SCRIPT_DIR/../lib/hermes-docker.sh"
 
 export PATH="${HOME}/.local/bin:/usr/local/bin:${PATH}"
 HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
@@ -55,6 +53,12 @@ docker run --rm "$IMAGE_NAME" bash -lc '
     command -v "$bin" >/dev/null || { echo "missing $bin"; exit 1; }
   done
 ' || die "image tool smoke failed"
+
+# Each rebuild leaves the previous image untagged and several GB of build cache
+# on a small disk. Dangling images and cache only; tagged images stay.
+log "Pruning dangling images and build cache"
+docker image prune -f >/dev/null || warn "docker image prune failed"
+docker builder prune -af >/dev/null || warn "docker builder prune failed"
 
 # --- Hermes skill ---
 SKILL_DST="$HERMES_HOME/skills/agent-reach"
@@ -198,9 +202,7 @@ fi
 
 log "Restarting gateway"
 refresh_gateway
-if ! docker_runtime_requested; then
-  sleep 4
-fi
+sleep 4
 
 log "Agent-Reach ready"
 log "  image:  $IMAGE_NAME"

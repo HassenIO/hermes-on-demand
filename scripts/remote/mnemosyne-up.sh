@@ -11,8 +11,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../lib/common.sh
 source "$SCRIPT_DIR/../lib/common.sh"
-# shellcheck source=../lib/hermes-docker.sh
-source "$SCRIPT_DIR/../lib/hermes-docker.sh"
 
 export PATH="${HOME}/.local/bin:/usr/local/bin:${PATH}"
 export HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
@@ -52,66 +50,43 @@ PY
 
 VENV="${MNEMOSYNE_VENV:-$HERMES_HOME/.mnemosyne/venv}"
 
-# With HERMES_DOCKER_RUNTIME=1 the venv is built on the image's Python and only
-# runs inside the gateway container. Every venv, data, and hermes CLI step runs
-# there as the data-dir owner; host paths below are not valid inside it.
-if docker_runtime_requested; then
-  container_is_official_gateway || refresh_gateway
-  container_is_official_gateway || die "gateway container hermes is not running; cannot install Mnemosyne into it"
-  GW_VENV=/opt/data/.mnemosyne/venv
-  gw() { run_in_gateway "$@"; }
-  log "Mnemosyne runs inside container hermes (venv: $GW_VENV)"
-  gw mkdir -p /opt/data/.mnemosyne /opt/data/mnemosyne/data
-  if ! gw "$GW_VENV/bin/python" -c "" >/dev/null 2>&1; then
-    log "Creating Mnemosyne side venv at $GW_VENV (image Python)"
-    gw python3 -m venv --copies "$GW_VENV"
-  fi
-else
-  GW_VENV="$VENV"
-  gw() { "$@"; }
+HERMES_PYTHON="$(hermes_runtime_python)" || die "could not find the Python that runs Hermes (hermes --print-runtime-command)"
+"$HERMES_PYTHON" --version >/dev/null || die "Hermes Python failed: $HERMES_PYTHON"
+log "Hermes Python: $HERMES_PYTHON ($("$HERMES_PYTHON" --version 2>&1))"
 
-  # --- Resolve Hermes gateway Python (launcher sibling) ---
-  HERMES_BIN="$(command -v hermes)" || die "hermes not on PATH"
-  HERMES_BIN="$(readlink -f "$HERMES_BIN")" || die "could not resolve hermes launcher"
-  [[ -f "$HERMES_BIN" && -x "$HERMES_BIN" ]] || die "hermes launcher not executable: $HERMES_BIN"
-  HERMES_BIN_DIR="$(dirname "$HERMES_BIN")"
-  if [[ -x "$HERMES_BIN_DIR/python" ]]; then
-    HERMES_PYTHON="$HERMES_BIN_DIR/python"
-  elif [[ -x "$HERMES_BIN_DIR/python3" ]]; then
-    HERMES_PYTHON="$HERMES_BIN_DIR/python3"
-  elif [[ -x /usr/local/lib/hermes-agent/venv/bin/python ]]; then
-    HERMES_PYTHON=/usr/local/lib/hermes-agent/venv/bin/python
-  elif [[ -x "${HOME}/.hermes/hermes-agent/venv/bin/python" ]]; then
-    HERMES_PYTHON="${HOME}/.hermes/hermes-agent/venv/bin/python"
-  else
-    die "Could not find Hermes Python beside $HERMES_BIN"
-  fi
-  "$HERMES_PYTHON" --version >/dev/null || die "Hermes Python failed: $HERMES_PYTHON"
-  log "Hermes Python: $HERMES_PYTHON ($("$HERMES_PYTHON" --version 2>&1))"
+mkdir -p "$(dirname "$VENV")" "$MNEMOSYNE_DATA_DIR"
 
-  mkdir -p "$(dirname "$VENV")" "$MNEMOSYNE_DATA_DIR"
-
-  if [[ ! -x "$VENV/bin/python" ]]; then
-    log "Creating Mnemosyne side venv at $VENV"
-    "$HERMES_PYTHON" -m venv "$VENV"
-  fi
+# A venv built elsewhere (the old gateway container, a Python upgraded away) is
+# rebuilt in place: its Python may not start, or its entry points may name an
+# interpreter path that is gone. pip --upgrade does not rewrite current packages.
+venv_usable() {
+  local f interp
+  "$VENV/bin/python" -c "" >/dev/null 2>&1 || return 1
+  for f in "$VENV/bin/mnemosyne" "$VENV/bin/mnemosyne-hermes"; do
+    [[ -f "$f" ]] || continue
+    IFS= read -r interp <"$f" || return 1
+    interp="${interp#\#!}"
+    interp="${interp%% *}"
+    [[ -x "$interp" ]] || return 1
+  done
+}
+if ! venv_usable; then
+  log "Creating Mnemosyne side venv at $VENV"
+  "$HERMES_PYTHON" -m venv --clear "$VENV"
 fi
 
 log "Installing $MNEMOSYNE_REQUIREMENT + mnemosyne-hermes into side venv"
-gw "$GW_VENV/bin/python" -m pip install --upgrade pip
-gw "$GW_VENV/bin/python" -m pip install --upgrade "$MNEMOSYNE_REQUIREMENT" mnemosyne-hermes
+"$VENV/bin/python" -m pip install --upgrade pip
+"$VENV/bin/python" -m pip install --upgrade "$MNEMOSYNE_REQUIREMENT" mnemosyne-hermes
 
 log "Registering Hermes plugin (wrapper mode)"
 [[ -x "$VENV/bin/mnemosyne-hermes" ]] || die "mnemosyne-hermes missing from side venv"
-gw "$GW_VENV/bin/mnemosyne-hermes" install --mode wrapper --python "$GW_VENV/bin/python" --force
-gw "$GW_VENV/bin/mnemosyne-hermes" status || true
+"$VENV/bin/mnemosyne-hermes" install --mode wrapper --python "$VENV/bin/python" --force
+"$VENV/bin/mnemosyne-hermes" status || true
 
-# Env for data dir + optional remote embeddings (OpenRouter). Host paths only:
-# inside the container HERMES_HOME is /opt/data and the default data dir is right.
-if ! docker_runtime_requested; then
-  upsert_env "HERMES_HOME" "$HERMES_HOME"
-  upsert_env "MNEMOSYNE_DATA_DIR" "$MNEMOSYNE_DATA_DIR"
-fi
+# Env for data dir + optional remote embeddings (OpenRouter)
+upsert_env "HERMES_HOME" "$HERMES_HOME"
+upsert_env "MNEMOSYNE_DATA_DIR" "$MNEMOSYNE_DATA_DIR"
 
 OR_KEY=""
 if [[ -f "$HERMES_HOME/.env" ]]; then
@@ -135,7 +110,7 @@ if [[ -n "$OR_KEY" ]]; then
 fi
 
 log "Setting memory.provider=mnemosyne"
-gw hermes config set memory.provider mnemosyne 2>/dev/null || true
+hermes config set memory.provider mnemosyne 2>/dev/null || true
 
 CONFIG_EXAMPLE="$(cd "$SCRIPT_DIR/../.." && pwd)/config/config.yaml.example"
 export CONFIG_EXAMPLE
@@ -207,12 +182,10 @@ PY
 fi
 
 log "Status"
-gw hermes memory status 2>&1 || true
+hermes memory status 2>&1 || true
 run_mnemosyne stats 2>&1 || true
-gw hermes tools list 2>&1 | grep -i mnemosyne | head -25 || true
+hermes tools list 2>&1 | grep -i mnemosyne | head -25 || true
 
-# Last host write. With HERMES_DOCKER_RUNTIME=1 the up script reclaims root-owned
-# files after start; anything run as root after it (mnemosyne.db) stays root's.
 log "Restarting gateway"
 refresh_gateway
 

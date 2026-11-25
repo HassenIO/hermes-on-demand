@@ -18,6 +18,8 @@ The suite calls the same function the script calls. A test that restates the rul
 | Ignore rules | `.gitignore` via `git check-ignore` | |
 | Makefile contract | `Makefile` | |
 | Skill unpack | `scripts/remote/unpack-custom-skills.sh` | temp dir only |
+| Host gateway, one writer | `start_host_gateway`, `refresh_gateway` | `scripts/lib/common.sh` | deploy, bootstrap, update, extension scripts |
+| Mnemosyne CLI with runtime env | `run_mnemosyne` | `scripts/lib/common.sh` | `install-artifacts.sh`, `mnemosyne-up.sh` |
 
 `load_dotenv` and `require_vars` live in `scripts/lib/common.sh`. Tests source that file. Do not rewrite it to make a test easier.
 

@@ -2,33 +2,20 @@
 # Runs ON the VPS. Safe Hermes upgrade that re-applies our local fixes.
 #
 # Upstream `hermes update` can overwrite docker.py and break Telegram sandboxes
-# (colon in session paths). The host path re-runs the patch and refreshes CLI links.
-# HERMES_DOCKER_RUNTIME=1 pulls the official image and recreates; it does not
-# run hermes update. A host patch failure on that path does not abort recreate.
+# (colon in session paths). This re-runs the patch and refreshes CLI links.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../lib/common.sh
 source "$SCRIPT_DIR/../lib/common.sh"
-# shellcheck source=../lib/hermes-docker.sh
-source "$SCRIPT_DIR/../lib/hermes-docker.sh"
 
 export PATH="${HOME}/.local/bin:/usr/local/bin:${PATH}"
 HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
 
-run_hermes_upgrade \
-  "$SCRIPT_DIR/patch-hermes-docker.sh" \
-  "$(hermes_compose_file)" \
-  "$SCRIPT_DIR/hermes-docker-up.sh"
-if docker_runtime_requested; then
-  if [[ -f "$SCRIPT_DIR/pin-cron-models.sh" ]]; then
-    bash "$SCRIPT_DIR/pin-cron-models.sh" || warn "cron model pin failed"
-  fi
-  log "Update + repair finished"
-  exit 0
-fi
-
 command -v hermes >/dev/null 2>&1 || die "hermes not on PATH"
+
+log "Running hermes update"
+hermes update || warn "hermes update exited non-zero; continuing with repair steps"
 
 # Re-link CLI (root FHS + user local)
 if [[ -x /usr/local/lib/hermes-agent/venv/bin/hermes ]]; then
@@ -88,12 +75,7 @@ if [[ -f "$SCRIPT_DIR/notion-up.sh" && -f "$HERMES_HOME/.env" ]]; then
 fi
 
 log "Restarting gateway"
-if ! start_host_gateway; then
-  if hermes_container_running; then
-    die "refusing host gateway start while container hermes is running"
-  fi
-  warn "host gateway start failed"
-fi
+start_host_gateway || warn "host gateway start failed"
 sleep 3
 hermes gateway status 2>/dev/null || true
 hermes memory status 2>&1 || true
