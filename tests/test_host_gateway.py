@@ -164,6 +164,13 @@ def test_mnemosyne_venv_comes_from_hermes_python_and_rebuilds_when_broken() -> N
     assert '"$HERMES_PYTHON" -m venv --clear "$VENV"' in text
 
 
+def test_agent_reach_prunes_build_leftovers_after_smoke() -> None:
+    text = (REMOTE / "agent-reach-up.sh").read_text()
+    smoke = text.index('|| die "image tool smoke failed"')
+    assert smoke < text.index("docker image prune -f") < text.index("docker builder prune -af")
+    assert "docker system prune" not in text and "image prune -a" not in text
+
+
 def test_config_push_pins_before_restart() -> None:
     text = (ROOT / "scripts" / "deploy.sh").read_text()
     block = text[text.index('if [[ "$MODE" == "config-only" ]]') :]

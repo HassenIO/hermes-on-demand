@@ -54,6 +54,12 @@ docker run --rm "$IMAGE_NAME" bash -lc '
   done
 ' || die "image tool smoke failed"
 
+# Each rebuild leaves the previous image untagged and several GB of build cache
+# on a small disk. Dangling images and cache only; tagged images stay.
+log "Pruning dangling images and build cache"
+docker image prune -f >/dev/null || warn "docker image prune failed"
+docker builder prune -af >/dev/null || warn "docker builder prune failed"
+
 # --- Hermes skill ---
 SKILL_DST="$HERMES_HOME/skills/agent-reach"
 log "Installing skill → $SKILL_DST"

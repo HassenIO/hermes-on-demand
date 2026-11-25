@@ -105,6 +105,8 @@ Docker is used only where it earns its place:
 | Agent terminal sandbox | Docker (`hermes-terminal:agent-reach`) | Agent commands run as root; the container keeps them away from `~/.hermes/.env` and the host |
 | Firecrawl lite + SearXNG | Docker compose, loopback only | Small, isolated, and SearXNG has many host dependencies |
 
+`make setup-agent-reach` prunes dangling images and the build cache after a successful build, so rebuilds do not fill the disk.
+
 ### Leaving the old Docker gateway runtime
 
 Earlier versions could run the gateway as container `hermes` (`nousresearch/hermes-agent`, `HERMES_DOCKER_RUNTIME=1`). That runtime is gone. Deploy, bootstrap, and health refuse to start the host gateway while that container exists, because two gateways would share one Hermes home. Migrate once, on the VPS:
