@@ -1,5 +1,6 @@
 # Runs on every pull request open or push. Local checks only: no SSH, no VPS.
 # Comment text is built by scripts/ci/pr-comment.mjs. Do not inline that logic here.
+# On `opened` only, scripts/ci/request-copilot-review.mjs asks Copilot for a review.
 name: PR checks
 
 on:
@@ -40,3 +41,10 @@ jobs:
           LINT_OUTCOME: ${{ steps.lint.outcome }}
           TEST_OUTCOME: ${{ steps.test.outcome }}
         run: node scripts/ci/pr-comment.mjs
+
+      - name: Request Copilot review
+        if: always() && github.event.action == 'opened'
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci/request-copilot-review.mjs
