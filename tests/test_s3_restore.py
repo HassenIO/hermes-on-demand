@@ -58,3 +58,9 @@ def test_cron_installer_knows_the_managed_python() -> None:
     assert "import hermes_bootstrap" in installer
     assert "/opt/hermes" not in installer
 
+
+
+def test_snapshot_skips_manifest_builtins() -> None:
+    snap = SNAPSHOT.read_text()
+    assert '".bundled_manifest"' in snap
+    assert "skill_md.parent.name in bundled" in snap

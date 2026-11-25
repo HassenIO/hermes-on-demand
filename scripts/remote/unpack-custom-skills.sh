@@ -31,8 +31,15 @@ if not tar_path.is_file() or tar_path.stat().st_size == 0:
 
 home.mkdir(parents=True, exist_ok=True)
 
+# Hermes lists synced builtins as "name:hash" lines. Under the Docker runtime the
+# builtin tree is inside the image, so this manifest is the only host-side record.
+manifest = home / ".bundled_manifest"
+bundled = {line.split(":", 1)[0].strip() for line in manifest.read_text().splitlines()} if manifest.is_file() else set()
+
 
 def is_builtin_rel(rel: Path) -> bool:
+    if rel.name == "SKILL.md" and rel.parent.name in bundled:
+        return True
     if not builtin.is_dir():
         return False
     return (builtin / rel).exists()

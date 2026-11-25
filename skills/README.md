@@ -17,6 +17,8 @@ make skills-pull
 ```
 
 The VPS copy is `~/.hermes/skills/`. The S3 watcher mirrors custom skills from there. Builtin Hermes skills are not in this tree.
+A skill is builtin when Hermes lists its directory name in `~/.hermes/skills/.bundled_manifest`, or when it exists under `/usr/local/lib/hermes-agent/skills`.
+Push, pull, and S3 never copy or prune builtins.
 
 Packages:
 

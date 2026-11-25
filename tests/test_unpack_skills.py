@@ -77,3 +77,57 @@ def test_unpack_refuses_builtin_path(tmp_path: Path) -> None:
     assert result.returncode != 0
     assert "refuses builtin path: builtin-skill" in result.stderr
     assert not (home / "skills" / "builtin-skill").exists()
+
+
+PACK = ROOT / "scripts" / "remote" / "pack-custom-skills.sh"
+
+
+def write_manifest_builtin(skills: Path) -> Path:
+    """A builtin known only from .bundled_manifest, as under the Docker runtime."""
+    skill = skills / "software-development" / "github"
+    skill.mkdir(parents=True)
+    (skill / "SKILL.md").write_text("---\nname: github\n---\n")
+    (skills / ".bundled_manifest").write_text("github:abc123\n")
+    return skill
+
+
+def test_unpack_keeps_manifest_builtin_on_prune(tmp_path: Path) -> None:
+    home = tmp_path / "hermes"
+    github = write_manifest_builtin(home / "skills")
+    archive = tmp_path / "skills.tgz"
+    make_tar(archive, {"custom-skill/SKILL.md": "---\nname: custom\n---\n"})
+
+    result = run_unpack(archive, home, tmp_path / "no-builtin-tree", prune=True)
+    assert result.returncode == 0, result.stderr
+    assert (github / "SKILL.md").is_file()
+    assert "pruned" not in result.stdout
+
+
+def test_unpack_refuses_manifest_builtin(tmp_path: Path) -> None:
+    home = tmp_path / "hermes"
+    write_manifest_builtin(home / "skills")
+    archive = tmp_path / "skills.tgz"
+    make_tar(archive, {"software-development/github/SKILL.md": "custom copy\n"})
+
+    result = run_unpack(archive, home, tmp_path / "no-builtin-tree", prune=False)
+    assert result.returncode != 0
+    assert "refuses builtin path: software-development/github" in result.stderr
+
+
+def test_pack_skips_manifest_builtin(tmp_path: Path) -> None:
+    home = tmp_path / "hermes"
+    skills = home / "skills"
+    write_manifest_builtin(skills)
+    (skills / "software-development" / "factory").mkdir(parents=True)
+    (skills / "software-development" / "factory" / "SKILL.md").write_text("---\nname: factory\n---\n")
+    out = tmp_path / "out.tgz"
+    env = os.environ.copy()
+    env["HERMES_HOME"] = str(home)
+    env["HERMES_BUILTIN_SKILLS"] = str(tmp_path / "no-builtin-tree")
+
+    result = subprocess.run(["bash", str(PACK), str(out)], cwd=ROOT, env=env, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.split() == ["software-development/factory"]
+    with tarfile.open(out) as tar:
+        assert tar.getnames() == ["software-development/factory/SKILL.md"]
+

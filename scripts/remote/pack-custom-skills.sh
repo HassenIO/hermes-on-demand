@@ -22,9 +22,16 @@ if not home.is_dir():
     print(f"ERROR: missing skills dir: {home}", file=sys.stderr)
     sys.exit(1)
 
+# Hermes lists synced builtins as "name:hash" lines. Under the Docker runtime the
+# builtin tree is inside the image, so this manifest is the only host-side record.
+manifest = home / ".bundled_manifest"
+bundled = {line.split(":", 1)[0].strip() for line in manifest.read_text().splitlines()} if manifest.is_file() else set()
+
 custom_roots: list[Path] = []
 for skill_md in sorted(home.rglob("SKILL.md")):
     rel = skill_md.relative_to(home)
+    if skill_md.parent.name in bundled:
+        continue
     if builtin.is_dir() and (builtin / rel).exists():
         continue
     custom_roots.append(skill_md.parent.resolve())
