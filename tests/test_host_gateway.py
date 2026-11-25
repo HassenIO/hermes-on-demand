@@ -150,6 +150,10 @@ def test_bootstrap_installs_unit_with_linger_and_one_writer() -> None:
 def test_health_requires_unit_and_refuses_leftover_container() -> None:
     text = (REMOTE / "healthcheck.sh").read_text()
     assert "systemctl --user is-active --quiet hermes-gateway" in text
+    # `hermes gateway status` exits 0 for a stopped service: it must never pass health.
+    assert "elif hermes gateway status" not in text
+    unit = text[text.index("if systemctl --user is-active --quiet hermes-gateway") :]
+    assert "failed=1" in unit[unit.index("\nelse\n") : unit.index("\nfi\n")]
     block = text[text.index("if hermes_container_present; then") :]
     assert "failed=1" in block[: block.index("fi\n")]
     # set -o pipefail: grep -q closing the pipe early fails it with SIGPIPE (141).

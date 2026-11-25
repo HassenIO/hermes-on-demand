@@ -95,15 +95,14 @@ if hermes_container_present; then
   failed=1
 fi
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+# The unit state decides. `hermes gateway status` exits 0 even when the service is
+# stopped, so its output is for diagnosis only.
 if systemctl --user is-active --quiet hermes-gateway 2>/dev/null; then
   log "OK  gateway unit hermes-gateway active"
   hermes gateway status 2>/dev/null || true
-elif hermes gateway status >/dev/null 2>&1; then
-  warn "gateway status OK but unit hermes-gateway is not active (started outside systemd?)"
-  hermes gateway status || true
 else
-  warn "FAIL gateway not running (journalctl --user -u hermes-gateway)"
-  hermes gateway status || true
+  warn "FAIL gateway unit hermes-gateway not active (journalctl --user -u hermes-gateway)"
+  hermes gateway status 2>/dev/null || true
   failed=1
 fi
 
