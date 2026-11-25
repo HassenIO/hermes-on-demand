@@ -51,9 +51,13 @@ def test_restore_and_snapshot_are_counterparts() -> None:
     assert "s3-restore.sh" in snap  # header cross-reference
 
 
-def test_cron_installer_knows_the_image_venv() -> None:
+def test_cron_installer_knows_the_managed_python() -> None:
+    # The current installer runs Hermes on a managed Python with no venv; cron.jobs
+    # imports only after hermes_bootstrap puts the checkout's dependencies on sys.path.
     installer = (ROOT / "scripts" / "remote" / "install-cron-jobs.sh").read_text()
-    assert "/opt/hermes/.venv/bin/python" in installer
+    assert "hermes --print-runtime-command" in installer
+    assert "import hermes_bootstrap" in installer
+    assert "/opt/hermes" not in installer
 
 
 def test_container_gets_host_timezone_for_cron() -> None:
