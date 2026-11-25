@@ -81,7 +81,7 @@ hermes vault add
 If the gateway reports `Permission denied` on `~/.hermes/vault/vault.json.enc`, the vault files belong to another user (left over from the old Docker runtime). Give them back, then reply in the thread:
 
 ```bash
-chown "$(id -u):$(id -g)" ~/.hermes/vault/vault.json.enc ~/.hermes/vault/vault.key
+sudo chown "$(id -u):$(id -g)" ~/.hermes/vault/vault.json.enc ~/.hermes/vault/vault.key
 ```
 
 ## Docker terminal failures

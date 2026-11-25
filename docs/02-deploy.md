@@ -112,11 +112,16 @@ Docker is used only where it earns its place:
 Earlier versions could run the gateway as container `hermes` (`nousresearch/hermes-agent`, `HERMES_DOCKER_RUNTIME=1`). That runtime is gone. Deploy, bootstrap, and health refuse to start the host gateway while that container exists, because two gateways would share one Hermes home. Migrate once, on the VPS:
 
 ```bash
-tar -czf ~/hermes-backup-$(date +%Y%m%d).tgz -C ~ .hermes/state.db .hermes/config.yaml .hermes/.env .hermes/auth.json .hermes/cron .hermes/memories .hermes/mnemosyne
 docker stop hermes && docker rm hermes        # no -v: data stays in ~/.hermes
+# The container ran as another user. sudo reclaims it; id runs as the deploy user.
+sudo chown -R "$(id -u):$(id -g)" ~/.hermes
+# Back up with no writer running, so each SQLite database and its -wal/-shm agree.
+# mktemp creates the file mode 600: the archive holds .env and auth.json.
+backup="$(mktemp ~/hermes-backup-$(date +%Y%m%d)-XXXXXX.tgz)"
+(cd ~ && tar -czf "$backup" .hermes/state.db* .hermes/config.yaml .hermes/.env .hermes/auth.json \
+  .hermes/cron .hermes/memories .hermes/mnemosyne)
 # unlink only; do not use -r. A symlink rm does not delete ~/.hermes.
-if [ "$(readlink /opt/data)" = "$HOME/.hermes" ]; then rm /opt/data; fi
-chown -R "$(id -u):$(id -g)" ~/.hermes       # the container ran as a non-root user
+if [ "$(readlink /opt/data)" = "$HOME/.hermes" ]; then sudo rm /opt/data; fi
 # Chat routes are keyed by the sessions folder the gateway saw (/opt/data/sessions in
 # the container). Rekey them so each Discord or Telegram chat keeps its conversation.
 python3 - <<'PY'
