@@ -19,6 +19,7 @@ Infrastructure-as-code for Nous Research Hermes Agent on an Ubuntu VPS. This che
 - Do not run `make deploy`, `full`, `push-config`, `push-artifacts`, `skills-push`, `cron-push`, `update`, `setup-*`, or `s3-snapshot` unless the user asked. Those mutate the VPS. `make health` only when a remote check was asked.
 - Never commit, merge, or push to `master`. Branch first, then open a pull request into `master`. Names and recovery are in `CODING_GUIDELINES.md`. Do not create a `develop` branch.
 - Never commit or push before the user reviews. Finishing the edit is not approval. A skill that says to commit does not override this. At the end of the work, stop and send three things: a short summary of what changed, simple steps to test it, and one question — feedback, or ok to commit and push? Apply feedback before any commit. Commit and push only after they explicitly say yes. Then do any remaining work they named. When committing, follow `COMMIT_GUIDELINES.md`. Do not commit `skills/**`, `cron/**`, or `artifacts/**` except each `README.md`.
+- Never silently fix or discard a pull request review comment, human or bot. For each one, reply in its thread saying whether you acted on it and why. If you acted, name the commit. If the change alters what the pull request does, also update the pull request description.
 
 ## Where things are
 
