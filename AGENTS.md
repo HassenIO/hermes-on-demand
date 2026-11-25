@@ -11,6 +11,7 @@ Infrastructure-as-code for Nous Research Hermes Agent on an Ubuntu VPS. This che
 - Never commit or print secrets. Placeholders belong in `.env.sample` only. Do not paste tokens, keys, or Notion/Discord IDs into docs, commits, issues, or chat.
 - Never put API keys in `config/config.yaml.example`. Secrets are filtered from `.env` into VPS `~/.hermes/.env`. `TARGET_*` and `SSH_*` stay on this machine.
 - Never set `GATEWAY_ALLOW_ALL_USERS` or `DISCORD_ALLOW_ALL_USERS` to true. Messaging is deny-by-default. Discord stays off unless both `DISCORD_BOT_TOKEN` and `DISCORD_ALLOWED_USERS` are set.
+- Hermes and its gateway run on the VPS host (systemd user unit `hermes-gateway`), not in a container. Docker is only for the agent terminal sandbox and Firecrawl/SearXNG. Do not reintroduce a Docker gateway runtime.
 - Never run bare `hermes update`. It overwrites the Docker colon-path patch and breaks Telegram sandboxes. Use `make update`.
 - Never half-configure Notion. Both `NOTION_API_KEY` and `NOTION_REPORTS_PARENT_PAGE_ID` are required, or Notion stays off.
 - Do not add `AWS_*` to `terminal.docker_forward_env`. S3 keys must not enter the agent sandbox.

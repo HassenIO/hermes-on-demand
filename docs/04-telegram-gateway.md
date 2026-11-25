@@ -34,7 +34,7 @@ Alternative: DM pairing (`hermes pairing approve telegram CODE`) — see upstrea
 
 ## Gateway process (VPS)
 
-Default install is the user unit below. If `HERMES_DOCKER_RUNTIME=1` ([deploy](02-deploy.md)), the writer is container `hermes`, not this unit. Do not `hermes gateway start` while that container is running — two writers corrupt `state.db`. Logs then are `docker logs -f hermes` and `~/.hermes/logs/`. Inside the container the data root is `/opt/data`, not `~/.hermes`.
+The gateway is the `hermes-gateway` systemd user unit on the VPS host. Deploy refuses to start it while a leftover container `hermes` (the removed Docker gateway runtime) exists, because two gateways would share `state.db`. See [deploy](02-deploy.md#leaving-the-old-docker-gateway-runtime).
 
 After bootstrap:
 

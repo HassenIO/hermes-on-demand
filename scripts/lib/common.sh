@@ -71,7 +71,8 @@ hermes_container_present() {
   docker inspect hermes >/dev/null 2>&1
 }
 
-# Host gateway start. Refuses while container hermes exists (one writer).
+# Host gateway start. Refuses while a leftover container hermes (the removed
+# Docker gateway runtime) exists: two gateways would share one Hermes home.
 start_host_gateway() {
   if hermes_container_running; then
     die "refusing to start host gateway while container hermes is running"
@@ -80,4 +81,39 @@ start_host_gateway() {
     die "refusing to start host gateway while container hermes exists"
   fi
   hermes gateway restart 2>/dev/null || hermes gateway start
+}
+
+refresh_gateway() {
+  start_host_gateway
+  hermes gateway status 2>/dev/null || true
+}
+
+# Python that runs Hermes. The current installer reports it; older installs keep a venv.
+hermes_runtime_python() {
+  local py
+  py="$(hermes --print-runtime-command 2>/dev/null \
+    | python3 -c 'import json, sys; print(json.load(sys.stdin)[0])' 2>/dev/null)" || py=""
+  if [[ -n "$py" && -x "$py" ]]; then
+    printf '%s\n' "$py"
+    return 0
+  fi
+  for py in /usr/local/lib/hermes-agent/venv/bin/python "${HOME}/.hermes/hermes-agent/venv/bin/python"; do
+    if [[ -x "$py" ]]; then
+      printf '%s\n' "$py"
+      return 0
+    fi
+  done
+  return 1
+}
+
+# Mnemosyne CLI with the Hermes runtime env, like the gateway sees it: without the
+# embedding settings a store falls back to local vectors and the index stops matching.
+run_mnemosyne() {
+  local home="${HERMES_HOME:-$HOME/.hermes}"
+  (
+    if [[ -f "$home/.env" ]]; then
+      load_dotenv "$home/.env"
+    fi
+    exec "${MNEMOSYNE_VENV:-$home/.mnemosyne/venv}/bin/mnemosyne" "$@"
+  )
 }

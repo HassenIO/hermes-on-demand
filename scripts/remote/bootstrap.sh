@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
-# Runs ON the VPS. Idempotent Hermes + Docker + Telegram gateway setup.
+# Runs ON the VPS. Idempotent Hermes (host install, systemd user unit) + Docker sandbox setup.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../lib/common.sh
 source "$SCRIPT_DIR/../lib/common.sh"
-# shellcheck source=../lib/hermes-docker.sh
-source "$SCRIPT_DIR/../lib/hermes-docker.sh"
 
 PAYLOAD_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 REMOTE_ENV="${PAYLOAD_DIR}/remote.env"
@@ -145,7 +143,27 @@ PY
   docker pull "$img" || warn "docker pull $img failed (gateway can pull later)"
 fi
 
-install_host_gateway_unless_docker
+if hermes_container_present; then
+  die "container hermes exists (old Docker gateway runtime); remove it first, see docs/02-deploy.md"
+fi
+log "Installing gateway service (user unit)"
+hermes gateway install || true
+if command -v loginctl >/dev/null 2>&1; then
+  if loginctl enable-linger "$USER" 2>/dev/null; then
+    log "Linger enabled for $USER"
+  elif sudo loginctl enable-linger "$USER" 2>/dev/null; then
+    log "Linger enabled for $USER (via sudo)"
+  else
+    warn "Could not enable linger; gateway may stop on logout"
+  fi
+fi
+log "Starting gateway"
+if ! start_host_gateway; then
+  warn "service start helpers failed; trying hermes gateway in background"
+  mkdir -p "$HERMES_HOME/logs"
+  nohup hermes gateway >>"$HERMES_HOME/logs/gateway.nohup.log" 2>&1 &
+  sleep 2
+fi
 
 # Pin cron jobs to config model (no-op if none exist yet)
 if [[ -f "$SCRIPT_DIR/pin-cron-models.sh" ]]; then
@@ -153,6 +171,4 @@ if [[ -f "$SCRIPT_DIR/pin-cron-models.sh" ]]; then
 fi
 
 log "Bootstrap finished"
-if ! docker_runtime_requested; then
-  hermes gateway status 2>/dev/null || true
-fi
+hermes gateway status 2>/dev/null || true

@@ -92,48 +92,44 @@ Upstream `hermes update` can overwrite `docker.py` and re-break Telegram sandbox
 bash ~/hermes-setup/scripts/remote/hermes-update.sh
 ```
 
-The host path runs `hermes update`, re-applies the path sanitize patch, refreshes CLI links, reinstalls artifacts, and restarts the gateway. With `HERMES_DOCKER_RUNTIME=1`, those commands pull `nousresearch/hermes-agent` and recreate the container; they do not run `hermes update`. Healthcheck also re-applies the patch if it is missing. Do not run bare `hermes update` on either path. See [Docker runtime](#docker-runtime-opt-in).
+It runs `hermes update`, re-applies the path sanitize patch, refreshes CLI links, reinstalls artifacts, and restarts the gateway. Healthcheck also re-applies the patch if it is missing. Do not run bare `hermes update`.
 
-## Docker runtime (opt-in)
+## Where things run
 
-Default `make deploy` and `make update` keep the host venv and the `hermes-gateway` user unit. They do not start a container.
+Hermes runs on the VPS host, installed by the official installer (`~/.hermes/hermes-agent`, launcher `~/.local/bin/hermes`). The gateway is the `hermes-gateway` systemd user unit, with linger. Mnemosyne is a host side-venv built from the Python that runs Hermes (`hermes --print-runtime-command`).
 
-Set `HERMES_DOCKER_RUNTIME=1` in the local `.env` (exact `1`; `true` does not count) to run the gateway from `nousresearch/hermes-agent` instead. The flag is not written into `~/.hermes/.env`.
+Docker is used only where it earns its place:
 
-The container bind-mounts the existing host `$HOME/.hermes` directory at `/opt/data`. A fresh root-owned directory with no `state.db` or `sessions/` is given to a non-root `hermes` user before start. A root-owned directory that already has sessions is refused. The image is not given UID 10000. It does not use a named volume, and it does not mount single files (`auth.json`, `.env`, `config.yaml`). `network_mode: host` so loopback Firecrawl (`127.0.0.1:3002`) and SearXNG (`127.0.0.1:8888`) stay reachable. No published ports. Dashboard stays off. No Caddy, DNS, or Open WebUI. Telegram and Discord stay long-poll.
+| Piece | Runs in | Why |
+|-------|---------|-----|
+| Agent terminal sandbox | Docker (`hermes-terminal:agent-reach`) | Agent commands run as root; the container keeps them away from `~/.hermes/.env` and the host |
+| Firecrawl lite + SearXNG | Docker compose, loopback only | Small, isolated, and SearXNG has many host dependencies |
 
-`PUID` and `PGID` are the owner of that directory. The script refuses a root-owned tree. It does not `chown` the tree to UID 10000.
+### Leaving the old Docker gateway runtime
 
-One writer. The up script exits non-zero if `hermes-gateway` is `active`, `activating`, `reloading`, or `deactivating`, if a host `hermes gateway` process is running, or if another container already mounts that directory (running or stopped). It does not stop or disable the unit on that path. Stop the unit yourself, then retry:
-
-```bash
-systemctl --user stop hermes-gateway
-```
-
-After the container is up, the script disables the user unit so a reboot cannot start it beside `restart: unless-stopped`.
-
-Inside the container, `HOME` and `HERMES_HOME` are `/opt/data`, not `~/.hermes`. A skill or cron line that expands `~/.hermes` looks at `/opt/data/.hermes` and does not see this tree. There is no custom entrypoint to alias it. When the container is started, the host gets a symlink `/opt/data` → `$HOME/.hermes` so terminal-sandbox paths the process builds under `/opt/data` resolve on the host dockerd. Volume sources in `config.yaml` stay host paths.
-
-The host venv is not removed. `/usr/local/lib/hermes-agent` and `~/.hermes/hermes-agent` stay, so you can roll back. Agent-Reach (`.agent-reach/venv`) is a host Python and does not run inside the official image. Mnemosyne (`.mnemosyne/venv`) is different: with the flag set it is built on the image's Python (`python3 -m venv --copies` inside the container) and only runs there. `make setup-mnemosyne` and the CV pointer run its CLI in container `hermes` as the data-dir owner (`run_in_gateway` / `run_mnemosyne` in `scripts/lib/hermes-docker.sh`). Health, the cron pin, and Mnemosyne's `hermes` calls use the gateway's CLI the same way, so they report the container and leave no root-owned files. Leaving the flag unset keeps Mnemosyne on the host venv and the systemd path.
-
-Telegram `docker run` from inside the container is not claimed. The host colon-path patch still runs only when host `docker.py` exists. Image code under `/opt/hermes` is immutable. `make update` with the flag set pulls the image and recreates the container. It does not run `hermes update`.
-
-### Rollback to the host gateway
-
-Stop the container first. Do not start the unit while the container is running.
+Earlier versions could run the gateway as container `hermes` (`nousresearch/hermes-agent`, `HERMES_DOCKER_RUNTIME=1`). That runtime is gone. Deploy, bootstrap, and health refuse to start the host gateway while that container exists, because two gateways would share one Hermes home. Migrate once, on the VPS:
 
 ```bash
-docker stop hermes
-docker rm hermes
+tar -czf ~/hermes-backup-$(date +%Y%m%d).tgz -C ~ .hermes/state.db .hermes/config.yaml .hermes/.env .hermes/auth.json .hermes/cron .hermes/memories .hermes/mnemosyne
+docker stop hermes && docker rm hermes        # no -v: data stays in ~/.hermes
 # unlink only; do not use -r. A symlink rm does not delete ~/.hermes.
-if [ "$(readlink /opt/data)" = "$HOME/.hermes" ]; then
-  rm /opt/data
-fi
-systemctl --user enable hermes-gateway
-hermes gateway start
+if [ "$(readlink /opt/data)" = "$HOME/.hermes" ]; then rm /opt/data; fi
+chown -R "$(id -u):$(id -g)" ~/.hermes       # the container ran as a non-root user
+# Chat routes are keyed by the sessions folder the gateway saw (/opt/data/sessions in
+# the container). Rekey them so each Discord or Telegram chat keeps its conversation.
+python3 - <<'PY'
+import os, sqlite3
+db = sqlite3.connect(os.path.expanduser("~/.hermes/state.db"), timeout=30)
+with db:
+    n = db.execute("update or ignore gateway_routing set scope=? where scope=?",
+                   (os.path.realpath(os.path.expanduser("~/.hermes/sessions")), "/opt/data/sessions")).rowcount
+print(f"rescoped {n} chat routes")
+PY
 ```
 
-`docker rm` has no `-v`. Do not `docker compose down -v`. Unset `HERMES_DOCKER_RUNTIME` before the next `make deploy`, or deploy will start the container again.
+Old local CLI sessions from the container stay readable in history, but the gateway logs `receipt refused: profile_mismatch` for them at start. That is expected: their receipts name the container's home.
+
+Then remove `HERMES_DOCKER_RUNTIME` from the local `.env` and run `make deploy`. It reuses the host install if one is there, rebuilds the Mnemosyne venv (the container's copy does not start on the host), and starts `hermes-gateway`. Free the disk afterwards with `docker rmi nousresearch/hermes-agent`.
 
 ## Docker sandbox notes (small VPS)
 

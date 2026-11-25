@@ -15,7 +15,7 @@ Give Hermes eyes on the open internet via [Agent-Reach](https://github.com/Panni
 
 The image is built on `nousresearch/hermes-sandbox:desktop`, so it also carries the Bot Desktop stack (Xvnc, xfce, Playwright Chromium). Hermes `browser_*` tools start inside the sandbox. Without it they fail with `Bot Desktop needs Xvnc ... inside the terminal backend's sandbox`.
 
-The Dockerfile also installs the `agent-browser` CLI, which Hermes runs by name in the sandbox. Desktop images after v0.21 dropped it. Without it the browser fails with `exec: agent-browser: not found`. Keep `AGENT_BROWSER_VERSION` in step with `agent-browser` in `/opt/hermes/pm/lock.json` in the gateway container after `make update`. Do not fix that with `bot_desktop.placement: gateway`: that runs the browser next to `~/.hermes/.env`.
+The Dockerfile also installs the `agent-browser` CLI, which Hermes runs by name in the sandbox. Desktop images after v0.21 dropped it. Without it the browser fails with `exec: agent-browser: not found`. Keep `AGENT_BROWSER_VERSION` in step with `agent-browser` in `~/.hermes/hermes-agent/pm/lock.json` on the VPS after `make update`. Do not fix that with `bot_desktop.placement: gateway`: that runs the browser next to `~/.hermes/.env`.
 
 **Not in v1:** Twitter/Reddit cookies, OpenCLI desktop sessions, XiaoHongShu MCP.
 

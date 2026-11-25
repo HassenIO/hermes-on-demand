@@ -65,23 +65,9 @@ if aws s3 cp "${DEST}/cron/jobs.json" "$STAGE/jobs.json" --region "$AWS_DEFAULT_
   if [[ -f "$JOBS" ]]; then
     warn "cron/jobs.json appeared while restoring — keeping the local copy"
   else
-    if bash "$SCRIPT_DIR/install-cron-jobs.sh" "$STAGE/jobs.json"; then
-      log "Installed cron jobs from S3 backup"
-    else
-      warn "host install-cron-jobs failed — retrying inside the gateway container"
-      STAGED_IN_HOME="$HERMES_HOME/cron/jobs.json.s3-restore"
-      mkdir -p "$HERMES_HOME/cron"
-      cp "$STAGE/jobs.json" "$STAGED_IN_HOME"
-      if [[ -n "$(command -v docker || true)" ]] && docker inspect hermes >/dev/null 2>&1; then
-        docker exec -i -e HERMES_HOME=/opt/data \
-          hermes bash -s -- "/opt/data/cron/jobs.json.s3-restore" <"$SCRIPT_DIR/install-cron-jobs.sh" \
-          || die "cron install failed on host and in container"
-        rm -f "$STAGED_IN_HOME"
-        log "Installed cron jobs from S3 backup (container path)"
-      else
-        die "no python with cron.jobs importable and no gateway container"
-      fi
-    fi
+    bash "$SCRIPT_DIR/install-cron-jobs.sh" "$STAGE/jobs.json" \
+      || die "cron install failed (no Python with cron.jobs importable)"
+    log "Installed cron jobs from S3 backup"
   fi
 else
   warn "no cron/jobs.json in ${DEST} — cron stays empty"

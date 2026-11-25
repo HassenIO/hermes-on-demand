@@ -33,20 +33,11 @@ source ~/.bashrc
 hermes doctor
 ```
 
-## Docker runtime and the user unit
+## Gateway refuses to start: container hermes exists
 
-If `HERMES_DOCKER_RUNTIME=1`, the gateway is container `hermes` (`nousresearch/hermes-agent`, command `gateway run`). Do not also start `hermes-gateway`. `systemctl --user start hermes-gateway` or `hermes gateway start` beside that container is a second writer. Stop one before starting the other. See [Deploy — Docker runtime](02-deploy.md#docker-runtime-opt-in).
+Deploy, bootstrap, and health refuse the host gateway while a container named `hermes` exists. It is the removed Docker gateway runtime, and two gateways would share one `state.db`. Follow [Leaving the old Docker gateway runtime](02-deploy.md#leaving-the-old-docker-gateway-runtime), then re-run `make deploy`.
 
-`docker logs -f hermes` is the container log. Host `hermes gateway status` is the unit, not the container. A skill path `~/.hermes/...` inside the container is `/opt/data/.hermes/...` and misses the mount.
-
-`docker logs` can stop days back (`--since` may print nothing). Read `~/.hermes/logs/gateway.log` and `errors.log` instead.
-
-Run the CLI inside the container as the data-dir owner: `docker exec -it -u hermes hermes hermes <cmd>`. Host `hermes` over root SSH writes root-owned files into `~/.hermes` that the container user cannot open. Symptoms: `Mnemosyne init failed: [Errno 13] Permission denied: '/opt/data/mnemosyne/data/mnemosyne.db.init.lock'` (memory silently off) and `Could not back up /opt/data/config.yaml`. Repair with the same reclaim the up script does, then restart:
-
-```bash
-find ~/.hermes -user 0 -exec chown -h "$(stat -c %u:%g ~/.hermes)" {} +
-docker restart hermes
-```
+Read `~/.hermes/logs/gateway.log` and `errors.log`, or `journalctl --user -u hermes-gateway -f`, for gateway errors.
 
 ## Gateway running but bot silent
 
@@ -74,23 +65,23 @@ hermes config get model
 hermes auth status anthropic   # logged in
 ```
 
-- OAuth expired or revoked? `hermes auth refresh anthropic`, or log in again: `hermes auth add anthropic --type oauth --no-browser`. With the Docker runtime, prefix `docker exec -it -u hermes hermes`.
+- OAuth expired or revoked? `hermes auth refresh anthropic`, or log in again: `hermes auth add anthropic --type oauth --no-browser`.
 - Subscription limit hit? `hermes auth list` shows the cooldown; `hermes auth reset anthropic` clears it after the window.
 - Model id exact: `claude-opus-5-5` (not the OpenRouter `anthropic/...` form)
 - Cron or embeddings failing instead? Those use OpenRouter: check `OPENROUTER_API_KEY` in `~/.hermes/.env`
 
 ## Browser logins: vault `Permission denied`
 
-Hermes cannot show a masked password prompt from Telegram or Discord, so save site logins on the VPS. Run it as the `hermes` user:
+Hermes cannot show a masked password prompt from Telegram or Discord, so save site logins on the VPS, as the same user the gateway runs as:
 
 ```bash
-docker exec -it -u hermes hermes hermes vault add
+hermes vault add
 ```
 
-Without `-u hermes`, `docker exec` runs as root. The vault files end up owned by root, and the gateway fails with `Permission denied: '/opt/data/vault/vault.json.enc'`. Fix the ownership, then reply in the thread:
+If the gateway reports `Permission denied` on `~/.hermes/vault/vault.json.enc`, the vault files belong to another user (left over from the old Docker runtime). Give them back, then reply in the thread:
 
 ```bash
-docker exec -u root hermes chown hermes:hermes /opt/data/vault/vault.json.enc /opt/data/vault/vault.key
+chown "$(id -u):$(id -g)" ~/.hermes/vault/vault.json.enc ~/.hermes/vault/vault.key
 ```
 
 ## Docker terminal failures

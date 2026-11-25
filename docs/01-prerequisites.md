@@ -40,9 +40,6 @@ The chat model is `claude-opus-5-5` on provider `anthropic`, pinned in `config/c
 1. After the first deploy, log in to Anthropic once on the VPS with your Claude subscription (OAuth, no API key):
 
    ```bash
-   # Docker runtime (HERMES_DOCKER_RUNTIME=1)
-   docker exec -it -u hermes hermes hermes auth add anthropic --type oauth --no-browser
-   # Host runtime
    hermes auth add anthropic --type oauth --no-browser
    ```
 

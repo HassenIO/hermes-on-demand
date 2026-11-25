@@ -8,8 +8,6 @@ ROOT = Path(__file__).resolve().parents[1]
 RESTORE = ROOT / "scripts" / "remote" / "s3-restore.sh"
 DEPLOY = ROOT / "scripts" / "deploy.sh"
 SNAPSHOT = ROOT / "scripts" / "remote" / "s3-snapshot.sh"
-UP = ROOT / "scripts" / "remote" / "hermes-docker-up.sh"
-COMPOSE = ROOT / "docker" / "hermes" / "docker-compose.yml"
 DOCS = ROOT / "docs" / "09-s3-snapshots.md"
 
 
@@ -40,8 +38,9 @@ def test_deploy_restores_before_gateway_start() -> None:
     # gated by the same four-variable condition
     gate_window = text[:restore_at].rsplit("if [[", 1)[-1]
     assert "S3_BUCKET" in gate_window and "AWS_DEFAULT_REGION" in gate_window
-    # runs before the gateway/container starts, and warns rather than failing the deploy
-    assert "gateway_refresh_ssh" in text[restore_at:]
+    # bootstrap already started the gateway: restart it after the restore so the
+    # restored skills and cron load, and warn rather than fail the deploy
+    assert "start_host_gateway" in text[restore_at : restore_at + 600]
     window = text[text.rfind("if [[", 0, restore_at) : restore_at + 400]
     assert "warn " in window
 
@@ -59,10 +58,3 @@ def test_cron_installer_knows_the_managed_python() -> None:
     assert "import hermes_bootstrap" in installer
     assert "/opt/hermes" not in installer
 
-
-def test_container_gets_host_timezone_for_cron() -> None:
-    compose = COMPOSE.read_text()
-    assert "TZ: ${TZ}" in compose
-    up = UP.read_text()
-    assert "^TZ=" in up
-    assert 'export TZ="' in up

@@ -6,8 +6,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../lib/common.sh
 source "$SCRIPT_DIR/../lib/common.sh"
-# shellcheck source=../lib/hermes-docker.sh
-source "$SCRIPT_DIR/../lib/hermes-docker.sh"
 
 export PATH="${HOME}/.local/bin:/usr/local/bin:${PATH}"
 HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
@@ -285,9 +283,7 @@ fi
 
 log "Restarting gateway"
 refresh_gateway
-if ! docker_runtime_requested; then
-  sleep 4
-fi
+sleep 4
 
 # Drop old sandboxes so env/mounts apply
 ids="$(docker ps -aq --filter label=hermes-agent=1 2>/dev/null || true)"
