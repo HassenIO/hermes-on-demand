@@ -131,3 +131,10 @@ def test_pack_skips_manifest_builtin(tmp_path: Path) -> None:
     with tarfile.open(out) as tar:
         assert tar.getnames() == ["software-development/factory/SKILL.md"]
 
+
+def test_pull_keeps_committed_readmes() -> None:
+    # The archive never holds README.md, so a plain --delete wiped every
+    # committed skills/**/README.md on each pull.
+    pull = (ROOT / "scripts" / "skills-pull.sh").read_text()
+    assert "rsync -a --delete --exclude 'README.md'" in pull
+    assert "! -name README.md -delete" in pull

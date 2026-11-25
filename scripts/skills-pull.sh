@@ -62,11 +62,11 @@ mkdir -p "$EXTRACT"
 tar -xzf "$STAGING/skills.tgz" -C "$EXTRACT"
 
 mkdir -p "$DEST"
+# README.md files are committed docs, never in the archive: keep them.
 if command -v rsync >/dev/null 2>&1; then
-  rsync -a --delete "$EXTRACT/" "$DEST/"
+  rsync -a --delete --exclude 'README.md' "$EXTRACT/" "$DEST/"
 else
-  # Portable fallback: replace tree contents
-  find "$DEST" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+  find "$DEST" -type f ! -name README.md -delete
   cp -R "$EXTRACT"/. "$DEST/"
 fi
 
