@@ -108,3 +108,15 @@ def test_model_provider_comes_from_example_only() -> None:
         text = script.read_text()
         assert not re.search(r"config set model\.provider [\w-]+", text), script.name
         assert r"\1openrouter" not in text, script.name
+
+
+def test_factory_state_is_shared_across_sandboxes() -> None:
+    # /root is per sandbox key (chat vs cron). Factory state and Claude Code
+    # sessions must sit on fixed writable host mounts so a later pass can resume.
+    lines = active_lines(CONFIG.read_text())
+    terminal = body_after(lines, find_key(lines, "terminal"))
+    volumes = list_items(terminal, "docker_volumes")
+    assert "/root/.hermes/factory:/root/.hermes/factory" in volumes
+    assert "/root/.hermes/claude-code:/root/.claude" in volumes
+    docker_env = body_after(terminal, find_key(terminal, "docker_env"))
+    assert raw_scalar(docker_env, "CLAUDE_CONFIG_DIR").strip('"') == "/root/.claude"

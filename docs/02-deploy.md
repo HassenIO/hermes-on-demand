@@ -140,7 +140,7 @@ Then remove `HERMES_DOCKER_RUNTIME` from the local `.env` and run `make deploy`.
 
 ## Docker sandbox notes (small VPS)
 
-- Config uses `container_memory: 768` and `docker_shm_size: 64m` (raise on larger hosts by editing `config/config.yaml.example`).
+- Config uses `container_memory: 1280` (one factory agent on a 1.6 GB host with swap) and `docker_shm_size: 64m` (raise on larger hosts by editing `config/config.yaml.example`).
 - Memories dir is mounted read-only into the sandbox.
 - Path sanitize: session IDs with `:` become safe directory names under `~/.hermes/sandboxes/docker/`.
 

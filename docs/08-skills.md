@@ -9,10 +9,11 @@ Invoke in chat with `/skill-name` or ask Hermes to load the skill. Long-form wri
 | Content (long-form) | 7 |
 | Research | 1 |
 | Tools & web | 1 |
+| Software development | 1 |
 | Job hunting | 3 |
 | Productivity & Notion | 10 |
 | Memory | 1 |
-| **Total** | **23** |
+| **Total** | **24** |
 
 ## Content (long-form)
 
@@ -37,6 +38,12 @@ Invoke in chat with `/skill-name` or ask Hermes to load the skill. Long-form wri
 | Skill | Version | Description | SKILL.md |
 |-------|---------|-------------|----------|
 | `agent-reach` | 1.0.0 | Read and search the open web via platform CLIs (YouTube, GitHub, RSS, Exa, Bilibili, Jina). Zero-config channels only. | [skills/agent-reach/SKILL.md](../skills/agent-reach/SKILL.md) |
+
+## Software development
+
+| Skill | Version | Description | SKILL.md |
+|-------|---------|-------------|----------|
+| `factory` | 0.5.0 | Use on 'factory init'/'factory run'. Issues to agent PRs. Hermes triages GitHub issues and runs Claude Code agents in the sandbox; you review the PRs. See [docs/tools/factory.md](tools/factory.md). | [skills/software-development/factory/SKILL.md](../skills/software-development/factory/SKILL.md) |
 
 ## Job hunting
 

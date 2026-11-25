@@ -127,7 +127,7 @@ terminal:
   backend: docker
   docker_image: "hermes-terminal:agent-reach"
   container_cpu: 1
-  container_memory: 768
+  container_memory: 1280
 ```
 
 - Agent shell commands run inside Docker, not as unrestricted host root

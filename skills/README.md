@@ -46,3 +46,4 @@ Packages:
 - `productivity/notion-skill-sync`
 - `productivity/user-context-lookup`
 - `research/ai-transformation-analyst`
+- `software-development/factory`
