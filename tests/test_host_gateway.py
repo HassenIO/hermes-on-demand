@@ -164,8 +164,29 @@ def test_health_requires_unit_and_refuses_leftover_container() -> None:
 def test_mnemosyne_venv_comes_from_hermes_python_and_rebuilds_when_broken() -> None:
     text = (REMOTE / "mnemosyne-up.sh").read_text()
     assert 'HERMES_PYTHON="$(hermes_runtime_python)"' in text
-    assert 'if ! "$VENV/bin/python" -c ""' in text
+    assert "if ! venv_usable; then" in text
     assert '"$HERMES_PYTHON" -m venv --clear "$VENV"' in text
+
+
+def run_venv_usable(venv: Path) -> int:
+    text = (REMOTE / "mnemosyne-up.sh").read_text()
+    fn = text[text.index("venv_usable() {") : text.index("\n}\n", text.index("venv_usable() {")) + 3]
+    script = f'set -euo pipefail\nVENV="{venv}"\n{fn}\nvenv_usable'
+    return subprocess.run(["bash", "-c", script], capture_output=True, text=True).returncode
+
+
+def test_mnemosyne_venv_with_stale_entry_point_is_not_usable(tmp_path: Path) -> None:
+    venv = tmp_path / "venv"
+    write_exe(venv / "bin" / "python", "#!/bin/sh\nexit 0\n")
+    assert run_venv_usable(venv) == 0  # fresh venv, no entry points yet
+    write_exe(venv / "bin" / "mnemosyne-hermes", f"#!{venv}/bin/python\nimport x\n")
+    assert run_venv_usable(venv) == 0
+    # Built in the old container: shebang names an interpreter that no longer exists.
+    write_exe(venv / "bin" / "mnemosyne", "#!/opt/data/.mnemosyne/venv/bin/python\nimport x\n")
+    assert run_venv_usable(venv) != 0
+    (venv / "bin" / "mnemosyne").unlink()
+    write_exe(venv / "bin" / "python", "#!/bin/sh\nexit 1\n")  # Python that cannot start
+    assert run_venv_usable(venv) != 0
 
 
 def test_agent_reach_prunes_build_leftovers_after_smoke() -> None:

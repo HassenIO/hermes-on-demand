@@ -56,9 +56,21 @@ log "Hermes Python: $HERMES_PYTHON ($("$HERMES_PYTHON" --version 2>&1))"
 
 mkdir -p "$(dirname "$VENV")" "$MNEMOSYNE_DATA_DIR"
 
-# A venv that exists but cannot start (built elsewhere, e.g. the old gateway
-# container, or a Python that was upgraded away) is rebuilt in place.
-if ! "$VENV/bin/python" -c "" >/dev/null 2>&1; then
+# A venv built elsewhere (the old gateway container, a Python upgraded away) is
+# rebuilt in place: its Python may not start, or its entry points may name an
+# interpreter path that is gone. pip --upgrade does not rewrite current packages.
+venv_usable() {
+  local f interp
+  "$VENV/bin/python" -c "" >/dev/null 2>&1 || return 1
+  for f in "$VENV/bin/mnemosyne" "$VENV/bin/mnemosyne-hermes"; do
+    [[ -f "$f" ]] || continue
+    IFS= read -r interp <"$f" || return 1
+    interp="${interp#\#!}"
+    interp="${interp%% *}"
+    [[ -x "$interp" ]] || return 1
+  done
+}
+if ! venv_usable; then
   log "Creating Mnemosyne side venv at $VENV"
   "$HERMES_PYTHON" -m venv --clear "$VENV"
 fi
