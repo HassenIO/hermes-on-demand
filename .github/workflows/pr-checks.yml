@@ -1,6 +1,7 @@
 # Runs on every pull request open or push. Local checks only: no SSH, no VPS.
 # Comment text is built by scripts/ci/pr-comment.mjs. Do not inline that logic here.
 # On `opened` only, scripts/ci/request-copilot-review.mjs asks Copilot for a review.
+# The `opened` run has its own concurrency group so a quick follow-up push cannot cancel it.
 name: PR checks
 
 on:
@@ -12,7 +13,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: pr-checks-${{ github.event.pull_request.number }}
+  group: pr-checks-${{ github.event.pull_request.number }}-${{ github.event.action == 'opened' && 'opened' || 'updates' }}
   cancel-in-progress: true
 
 jobs:

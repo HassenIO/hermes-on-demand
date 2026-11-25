@@ -89,6 +89,14 @@ def test_workflow_requests_review_last_on_opened_only() -> None:
     assert "pr-comment.mjs" in steps[-2]
 
 
+def test_follow_up_push_cannot_cancel_opened_run() -> None:
+    text = WORKFLOW.read_text()
+    assert (
+        "group: pr-checks-${{ github.event.pull_request.number }}-"
+        "${{ github.event.action == 'opened' && 'opened' || 'updates' }}"
+    ) in text
+
+
 def test_workflow_permissions_stay_minimal() -> None:
     text = WORKFLOW.read_text()
     block = text.split("\npermissions:\n", 1)[1].split("\n\n", 1)[0]
