@@ -137,7 +137,30 @@ def test_pull_keeps_committed_readmes() -> None:
     # committed skills/**/README.md on each pull.
     pull = (ROOT / "scripts" / "skills-pull.sh").read_text()
     assert "rsync -a --delete --exclude 'README.md'" in pull
-    assert "! -name README.md -delete" in pull
+    assert "! -type d ! -name README.md -delete" in pull
+
+
+def test_pull_fallback_replaces_folder_with_file_and_keeps_readmes(tmp_path: Path) -> None:
+    # The no-rsync branch of skills-pull.sh, run as written on temp dirs.
+    pull = (ROOT / "scripts" / "skills-pull.sh").read_text()
+    branch = pull[pull.index("else\n", pull.index("command -v rsync")) + 5 : pull.index("\nfi\n", pull.index("command -v rsync"))]
+    dest, extract = tmp_path / "skills", tmp_path / "extract"
+    (dest / "pkg" / "assets").mkdir(parents=True)
+    (dest / "pkg" / "assets" / "old.png").write_text("old")
+    (dest / "pkg" / "SKILL.md").write_text("old")
+    (dest / "pkg" / "README.md").write_text("committed")
+    (dest / "gone").mkdir()
+    (dest / "gone" / "SKILL.md").write_text("stale")
+    (extract / "pkg").mkdir(parents=True)
+    (extract / "pkg" / "SKILL.md").write_text("new")
+    (extract / "pkg" / "assets").write_text("now a file")
+    script = f'set -euo pipefail\nDEST="{dest}"\nEXTRACT="{extract}"\n{branch}\n'
+    result = subprocess.run(["bash", "-c", script], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert (dest / "pkg" / "assets").read_text() == "now a file"
+    assert (dest / "pkg" / "SKILL.md").read_text() == "new"
+    assert (dest / "pkg" / "README.md").read_text() == "committed"
+    assert not (dest / "gone").exists()
 
 
 def nested_custom_over_builtin(skills: Path) -> Path:
