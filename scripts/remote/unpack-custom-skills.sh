@@ -31,8 +31,8 @@ if not tar_path.is_file() or tar_path.stat().st_size == 0:
 
 home.mkdir(parents=True, exist_ok=True)
 
-# Hermes lists synced builtins as "name:hash" lines. Under the Docker runtime the
-# builtin tree is inside the image, so this manifest is the only host-side record.
+# Hermes lists synced builtins as "name:hash" lines. The builtin tree moves with the
+# install (~/.hermes/hermes-agent/skills today), so this manifest is the reliable record.
 manifest = home / ".bundled_manifest"
 bundled = {line.split(":", 1)[0].strip() for line in manifest.read_text().splitlines()} if manifest.is_file() else set()
 
@@ -43,6 +43,15 @@ def is_builtin_rel(rel: Path) -> bool:
     if not builtin.is_dir():
         return False
     return (builtin / rel).exists()
+
+
+def builtin_descendants(root: Path) -> list[str]:
+    """Builtin skills nested inside *root*: deleting *root* would delete them too."""
+    return sorted(
+        md.parent.relative_to(home).as_posix()
+        for md in root.rglob("SKILL.md")
+        if md.parent != root and is_builtin_rel(md.relative_to(home))
+    )
 
 
 def skill_roots_under(base: Path) -> list[Path]:
@@ -88,6 +97,10 @@ try:
         dest = home / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
         if dest.exists():
+            nested = builtin_descendants(dest)
+            if nested:
+                print(f"ERROR: refuses to replace {rel.as_posix()}: holds builtin {', '.join(nested)}", file=sys.stderr)
+                sys.exit(1)
             shutil.rmtree(dest)
         shutil.copytree(root, dest)
         # Drop hermes bookkeeping sidecars if any slipped in
@@ -110,6 +123,10 @@ try:
             if root in keep:
                 continue
             rel = root.relative_to(home)
+            nested = builtin_descendants(root)
+            if nested:
+                print(f"kept {rel.as_posix()} (holds builtin {', '.join(nested)})", flush=True)
+                continue
             shutil.rmtree(root)
             print(f"pruned {rel.as_posix()}", flush=True)
             # remove empty parents under home (not home itself)

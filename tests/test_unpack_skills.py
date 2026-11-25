@@ -138,3 +138,45 @@ def test_pull_keeps_committed_readmes() -> None:
     pull = (ROOT / "scripts" / "skills-pull.sh").read_text()
     assert "rsync -a --delete --exclude 'README.md'" in pull
     assert "! -name README.md -delete" in pull
+
+
+def nested_custom_over_builtin(skills: Path) -> Path:
+    """A custom package whose folder also holds a manifest-listed builtin skill."""
+    github = write_manifest_builtin(skills)
+    (skills / "software-development" / "SKILL.md").write_text("---\nname: dev-notes\n---\n")
+    return github
+
+
+def test_pack_does_not_copy_builtin_nested_in_custom(tmp_path: Path) -> None:
+    home = tmp_path / "hermes"
+    nested_custom_over_builtin(home / "skills")
+    out = tmp_path / "out.tgz"
+    env = os.environ.copy()
+    env["HERMES_HOME"] = str(home)
+    env["HERMES_BUILTIN_SKILLS"] = str(tmp_path / "no-builtin-tree")
+    result = subprocess.run(["bash", str(PACK), str(out)], cwd=ROOT, env=env, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    with tarfile.open(out) as tar:
+        assert tar.getnames() == ["software-development/SKILL.md"]
+
+
+def test_unpack_refuses_to_replace_custom_holding_builtin(tmp_path: Path) -> None:
+    home = tmp_path / "hermes"
+    github = nested_custom_over_builtin(home / "skills")
+    archive = tmp_path / "skills.tgz"
+    make_tar(archive, {"software-development/SKILL.md": "---\nname: dev-notes v2\n---\n"})
+    result = run_unpack(archive, home, tmp_path / "no-builtin-tree", prune=False)
+    assert result.returncode != 0
+    assert "holds builtin software-development/github" in result.stderr
+    assert (github / "SKILL.md").is_file()
+
+
+def test_prune_keeps_custom_holding_builtin(tmp_path: Path) -> None:
+    home = tmp_path / "hermes"
+    github = nested_custom_over_builtin(home / "skills")
+    archive = tmp_path / "skills.tgz"
+    make_tar(archive, {"other/SKILL.md": "---\nname: other\n---\n"})
+    result = run_unpack(archive, home, tmp_path / "no-builtin-tree", prune=True)
+    assert result.returncode == 0, result.stderr
+    assert "kept software-development (holds builtin software-development/github)" in result.stdout
+    assert (github / "SKILL.md").is_file()
