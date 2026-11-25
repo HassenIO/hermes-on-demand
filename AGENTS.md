@@ -24,7 +24,7 @@ Infrastructure-as-code for Nous Research Hermes Agent on an Ubuntu VPS. This che
 
 - Prefer `make` over raw `./scripts/deploy.sh` flags. `make help` lists targets.
 - Remote payload is `~/hermes-setup/` (`REMOTE_DIR`). Runtime is `~/.hermes/`.
-- Gateway is the systemd user unit `hermes-gateway`, with linger. Logs: `journalctl --user -u hermes-gateway -f` and `~/.hermes/logs/gateway.log`.
+- Gateway is the systemd user unit `hermes-gateway`, with linger. Logs: `journalctl --user -u hermes-gateway -f` and `~/.hermes/logs/gateway.log`. `make logs` streams that journal from this machine.
 - New extension: follow `extensions/README.md`. Add `extensions/<name>/`, an idempotent `scripts/remote/<name>-up.sh`, a `deploy.sh` flag, an `extensions/registry.yaml` entry, `docs/tools/<name>.md`, and keys in `.env.sample` and `config.yaml.example`. Hook `healthcheck.sh` and `hermes-update.sh` if it must survive `hermes update`.
 - Skills catalog: `docs/08-skills.md`. Cron troubleshooting: `skills/productivity/cron-job-troubleshooting`. S3 scope: `docs/09-s3-snapshots.md`.
 

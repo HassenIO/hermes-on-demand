@@ -19,6 +19,14 @@ docker info
 
 ## Logs
 
+From the local machine, stream the gateway journal over SSH (uses `TARGET_*` and `SSH_*` from `.env`, Ctrl-C stops):
+
+```bash
+make logs
+```
+
+On VPS:
+
 ```bash
 journalctl --user -u hermes-gateway -f
 tail -f ~/.hermes/logs/gateway.log
