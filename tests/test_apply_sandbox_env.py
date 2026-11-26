@@ -45,7 +45,7 @@ def test_adds_tool_keys_once_and_keeps_values_out(tmp_path: Path) -> None:
     assert after == before + ["SOME_TOOL_API_KEY"]
     assert "OPENROUTER_API_KEY" not in after
     assert "secret" not in cfg
-    rest = EXAMPLE.read_text().replace("    - CLAUDE_CODE_OAUTH_TOKEN\n", "    - CLAUDE_CODE_OAUTH_TOKEN\n    - \"SOME_TOOL_API_KEY\"\n")
+    rest = EXAMPLE.read_text().replace("    - AWS_DEFAULT_REGION\n", "    - AWS_DEFAULT_REGION\n    - \"SOME_TOOL_API_KEY\"\n")
     assert cfg == rest
 
 

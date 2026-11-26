@@ -14,7 +14,7 @@ Infrastructure-as-code for Nous Research Hermes Agent on an Ubuntu VPS. This che
 - Hermes and its gateway run on the VPS host (systemd user unit `hermes-gateway`), not in a container. Docker is only for the agent terminal sandbox and Firecrawl/SearXNG. Do not reintroduce a Docker gateway runtime.
 - Never run bare `hermes update`. It overwrites the Docker colon-path patch and breaks Telegram sandboxes. Use `make update`.
 - Never half-configure Notion. Both `NOTION_API_KEY` and `NOTION_REPORTS_PARENT_PAGE_ID` are required, or Notion stays off.
-- Do not add `AWS_*` to `terminal.docker_forward_env`. S3 keys must not enter the agent sandbox.
+- The agent sandbox gets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_DEFAULT_REGION` through `terminal.docker_forward_env` so Hermes can read and write S3. They are the same keys as the S3 snapshot. Do not forward other `AWS_*` names or `S3_*`.
 - Do not bake Notion page IDs or other tenant IDs into the repo. They belong in `.env` only.
 - Do not run `make deploy`, `full`, `push-config`, `push-artifacts`, `skills-push`, `cron-push`, `update`, `setup-*`, or `s3-snapshot` unless the user asked. Those mutate the VPS. `make health` only when a remote check was asked.
 - Never commit, merge, or push to `master`. Branch first, then open a pull request into `master`. Names and recovery are in `CODING_GUIDELINES.md`. Do not create a `develop` branch.
