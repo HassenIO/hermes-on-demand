@@ -34,6 +34,10 @@ terminal:
     - NOTION_REPORTS_PARENT_PAGE_ID
     # Bundled claude-code skill runs `claude -p` in the sandbox (docs/tools/claude-code.md)
     - CLAUDE_CODE_OAUTH_TOKEN
+    # S3 read/write from the agent. Same keys as the S3 snapshot (docs/09-s3-snapshots.md)
+    - AWS_ACCESS_KEY_ID
+    - AWS_SECRET_ACCESS_KEY
+    - AWS_DEFAULT_REGION
   # Put ~/.hermes/bin first so bare `notion-cli` works in the sandbox
   docker_env:
     PATH: "/root/.hermes/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin"

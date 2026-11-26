@@ -81,7 +81,7 @@ def test_config_invariants() -> None:
     terminal = body_after(lines, find_key(lines, "terminal"))
     forwarded = list_items(terminal, "docker_forward_env")
     assert forwarded
-    assert not any(item.startswith("AWS_") or "AWS_" in item for item in forwarded)
+    assert {"AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_DEFAULT_REGION"} <= set(forwarded)
 
     web = body_after(lines, find_key(lines, "web"))
     assert raw_scalar(web, "search_backend") == "searxng"

@@ -24,7 +24,9 @@ An empty custom-skill tree does **not** delete the remote `skills/` prefix. A mi
 - Builtin skills: under the Hermes install tree, or listed in `~/.hermes/skills/.bundled_manifest` (Docker runtime)
 - Firecrawl / SearXNG data
 
-AWS keys are forwarded in the deploy payload (`remote.env`) so the VPS can upload. They are not listed in `terminal.docker_forward_env`, so the agent sandbox does not receive them. Do not put key values in git, docs, or `manifest.json`.
+AWS keys are forwarded in the deploy payload (`remote.env`) so the VPS can upload. They are also listed in `terminal.docker_forward_env`, so the agent sandbox receives them and Hermes can read and write S3 with the `aws` CLI baked into the sandbox image.
+That means anything running in the sandbox, including a prompt-injected command, can write to the snapshot bucket.
+Keep the IAM policy scoped to the buckets Hermes needs. Do not put key values in git, docs, or `manifest.json`.
 
 ## Setup
 

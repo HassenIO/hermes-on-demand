@@ -23,6 +23,13 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends gh \
   && rm -rf /var/lib/apt/lists/*
 
+# AWS CLI v2 (official installer) so the agent can use S3 with the forwarded AWS_* keys
+RUN curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip" -o /tmp/awscliv2.zip \
+  && unzip -q /tmp/awscliv2.zip -d /tmp \
+  && /tmp/aws/install \
+  && rm -rf /tmp/aws /tmp/awscliv2.zip \
+  && aws --version
+
 # Agent-Reach from GitHub (NOT the unrelated PyPI name) + zero-config deps
 ARG AGENT_REACH_REF=main
 RUN python3 -m pip install --upgrade pip \

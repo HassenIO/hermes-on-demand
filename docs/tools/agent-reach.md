@@ -81,3 +81,4 @@ scripts/remote/agent-reach-up.sh
 - Tools run **inside** the Docker terminal sandbox (not host shell).
 - No social cookies in v1.
 - Optional `GITHUB_TOKEN` via `terminal.docker_forward_env` (from `~/.hermes/.env`).
+- The image ships the AWS CLI v2. It uses the `AWS_*` keys forwarded via `terminal.docker_forward_env` ([09-s3-snapshots](../09-s3-snapshots.md)).
