@@ -43,6 +43,7 @@ Run from the repo root. Targets that talk to the VPS require a filled `.env`. `m
 | **`make push-artifacts`** | Push SOUL / USER / MEMORY / CV only |
 | **`make sync`** | Git-style merge of artifacts with the live VPS files; push only when local changed |
 | **`make health`** | Remote healthcheck |
+| **`make logs`** | Stream `hermes-gateway` logs from the VPS (Ctrl-C stops) |
 | **`make update`** | `hermes update` + Docker patch + extension refresh |
 | **`make s3-snapshot`** | Mirror VPS custom skills + cron to S3 |
 
@@ -51,6 +52,7 @@ make deploy           # after cloning or big stack changes
 make push-config      # after editing .env or config/config.yaml.example (e.g. model)
 make sync             # after editing artifacts/*.md (keeps Hermes's own edits)
 make health           # is the VPS healthy?
+make logs             # follow the gateway journal from here
 make update           # upgrade Hermes on the VPS safely
 ```
 

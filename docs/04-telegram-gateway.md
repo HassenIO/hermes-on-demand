@@ -46,6 +46,7 @@ hermes gateway restart
 
 # logs (user unit)
 journalctl --user -u hermes-gateway -f
+# or, from the local machine: make logs
 # or
 tail -f ~/.hermes/logs/gateway.log
 ```

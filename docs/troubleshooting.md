@@ -37,7 +37,7 @@ hermes doctor
 
 Deploy, bootstrap, and health refuse the host gateway while a container named `hermes` exists. It is the removed Docker gateway runtime, and two gateways would share one `state.db`. Follow [Leaving the old Docker gateway runtime](02-deploy.md#leaving-the-old-docker-gateway-runtime), then re-run `make deploy`.
 
-Read `~/.hermes/logs/gateway.log` and `errors.log`, or `journalctl --user -u hermes-gateway -f`, for gateway errors.
+Read `~/.hermes/logs/gateway.log` and `errors.log`, or `journalctl --user -u hermes-gateway -f`, for gateway errors. From the local machine, `make logs` streams the same journal.
 
 ## Gateway running but bot silent
 

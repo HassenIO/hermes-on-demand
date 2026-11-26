@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+import os
+import pty
 import re
+import shutil
+import stat
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -127,3 +132,101 @@ def test_test_target_does_not_ssh_or_load_env() -> None:
     assert "uv run --no-env-file pytest" in recipe
     assert "source" not in recipe
     assert ".env" not in recipe.replace("--no-env-file", "")
+
+
+def test_logs_streams_gateway_journal_over_batch_ssh() -> None:
+    text = (ROOT / "Makefile").read_text()
+    _phony, targets = parse_makefile(text)
+    comment, recipe, prereqs = targets["logs"]
+    assert comment
+    assert prereqs == "check-env"
+    assert "BatchMode=yes" in recipe
+    assert "StrictHostKeyChecking=accept-new" in recipe
+    assert "'journalctl --user -u hermes-gateway -f'" in recipe
+    assert not INVOKE_RE.search(recipe)
+    _c, help_recipe, _p = targets["help"]
+    most_used = help_recipe.split("Most used:", 1)[1].split("Setup extensions:", 1)[0]
+    assert "make logs" in most_used
+
+
+def run_logs(
+    workdir: Path, env_text: str, stdin: int = subprocess.DEVNULL
+) -> tuple[subprocess.CompletedProcess[str], Path]:
+    shutil.copy(ROOT / "Makefile", workdir / "Makefile")
+    (workdir / ".env").write_text(env_text)
+    bindir = workdir / "bin"
+    bindir.mkdir()
+    argv_file = workdir / "argv"
+    stub = bindir / "ssh"
+    stub.write_text(f"#!/bin/sh\nprintf '%s\\n' \"$@\" > '{argv_file}'\n")
+    stub.chmod(stub.stat().st_mode | stat.S_IEXEC)
+    env = {
+        "PATH": str(bindir) + os.pathsep + os.environ.get("PATH", "/usr/bin:/bin"),
+        "HOME": str(workdir),
+    }
+    result = subprocess.run(
+        ["make", "-s", "-C", str(workdir), "logs"],
+        env=env,
+        stdin=stdin,
+        capture_output=True,
+        text=True,
+    )
+    return result, argv_file
+
+
+def test_logs_passes_env_target_to_ssh(tmp_path: Path) -> None:
+    result, argv_file = run_logs(
+        tmp_path,
+        "TARGET_HOST=vps.example.invalid\n"
+        "TARGET_USER=hermes\n"
+        "SSH_PORT=2222\n"
+        "SSH_IDENTITY_FILE=/keys/id_test\n",
+    )
+    assert result.returncode == 0, result.stderr
+    assert argv_file.read_text().splitlines() == [
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=accept-new",
+        "-p",
+        "2222",
+        "-i",
+        "/keys/id_test",
+        "hermes@vps.example.invalid",
+        "journalctl --user -u hermes-gateway -f",
+    ]
+
+
+def test_logs_defaults_port_and_skips_identity(tmp_path: Path) -> None:
+    result, argv_file = run_logs(
+        tmp_path, "TARGET_HOST=vps.example.invalid\nTARGET_USER=hermes\n"
+    )
+    assert result.returncode == 0, result.stderr
+    args = argv_file.read_text().splitlines()
+    assert args[args.index("-p") + 1] == "22"
+    assert "-i" not in args
+    assert "-t" not in args
+
+
+def test_logs_allocates_remote_tty_for_terminal_stdin(tmp_path: Path) -> None:
+    primary, secondary = pty.openpty()
+    try:
+        result, argv_file = run_logs(
+            tmp_path,
+            "TARGET_HOST=vps.example.invalid\nTARGET_USER=hermes\n",
+            stdin=secondary,
+        )
+    finally:
+        os.close(secondary)
+        os.close(primary)
+    assert result.returncode == 0, result.stderr
+    args = argv_file.read_text().splitlines()
+    assert "-t" in args
+    assert args.index("-t") < args.index("hermes@vps.example.invalid")
+
+
+def test_logs_requires_target_host(tmp_path: Path) -> None:
+    result, argv_file = run_logs(tmp_path, "TARGET_USER=hermes\n")
+    assert result.returncode != 0
+    assert "TARGET_HOST missing in .env" in result.stderr
+    assert not argv_file.exists()
