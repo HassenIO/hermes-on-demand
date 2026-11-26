@@ -72,7 +72,9 @@ hermes auth status anthropic   # logged in
 
 ## Browser logins: vault `Permission denied`
 
-Hermes cannot show a masked password prompt from Telegram or Discord, so save site logins on the VPS, as the same user the gateway runs as:
+Hermes cannot show a masked password prompt from Telegram or Discord, so save site logins from the local machine with `make new-login`.
+It runs `hermes vault add` on the VPS as the same user the gateway runs as.
+On the VPS directly:
 
 ```bash
 hermes vault add

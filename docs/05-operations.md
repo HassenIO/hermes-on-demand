@@ -33,6 +33,25 @@ tail -f ~/.hermes/logs/gateway.log
 tail -f ~/.hermes/logs/errors.log
 ```
 
+## Site logins
+
+Hermes cannot show a masked password prompt from Telegram or Discord.
+Save site logins from the local machine instead (uses `TARGET_*` and `SSH_*` from `.env`):
+
+```bash
+make new-login
+```
+
+It runs `hermes vault add` on the VPS as the gateway user and needs a real terminal.
+
+On VPS:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+hermes vault list
+hermes vault rm <handle>
+```
+
 ## Update Hermes
 
 **Do not run bare `hermes update` alone** — it can overwrite our Docker path sanitize and break Telegram sandboxes.
