@@ -44,6 +44,7 @@ Run from the repo root. Targets that talk to the VPS require a filled `.env`. `m
 | **`make sync`** | Git-style merge of artifacts with the live VPS files; push only when local changed |
 | **`make health`** | Remote healthcheck |
 | **`make logs`** | Stream `hermes-gateway` logs from the VPS (Ctrl-C stops) |
+| **`make new-login`** | Save a site login in the VPS Hermes vault (interactive `hermes vault add`) |
 | **`make update`** | `hermes update` + Docker patch + extension refresh |
 | **`make s3-snapshot`** | Mirror VPS custom skills + cron to S3 |
 
@@ -53,6 +54,7 @@ make push-config      # after editing .env or config/config.yaml.example (e.g. m
 make sync             # after editing artifacts/*.md (keeps Hermes's own edits)
 make health           # is the VPS healthy?
 make logs             # follow the gateway journal from here
+make new-login        # save a site login for Hermes (password prompt stays in your terminal)
 make update           # upgrade Hermes on the VPS safely
 ```
 

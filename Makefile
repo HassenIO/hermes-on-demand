@@ -8,7 +8,7 @@ SHELL := /bin/bash
 ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 DEPLOY := $(ROOT)/scripts/deploy.sh
 
-.PHONY: help check-env lint test install-hooks ssh logs skills-pull skills-push cron-pull cron-push \
+.PHONY: help check-env lint test install-hooks ssh logs new-login skills-pull skills-push cron-pull cron-push \
 	deploy full push-config push-artifacts sync health update s3-snapshot \
 	setup-firecrawl setup-mnemosyne setup-agent-reach setup-notion
 
@@ -32,6 +32,7 @@ help: ## Show this help
 	@echo "  make update            hermes update + repairs"
 	@echo "  make ssh               Interactive SSH to TARGET_HOST"
 	@echo "  make logs              Stream hermes-gateway logs from the VPS (Ctrl-C stops)"
+	@echo "  make new-login         Save a site login in the VPS Hermes vault (interactive)"
 	@echo "  make skills-pull       Pull custom VPS skills → ./skills/"
 	@echo "  make skills-push       Push ./skills/ → VPS (custom only)"
 	@echo "  make cron-pull         Pull scheduled jobs → ./cron/jobs.json"
@@ -86,6 +87,16 @@ logs: check-env ## Stream hermes-gateway journal from TARGET_HOST (Ctrl-C stops)
 	if [[ -n "$${SSH_IDENTITY_FILE:-}" ]]; then opts+=(-i "$$SSH_IDENTITY_FILE"); fi && \
 	if [[ -t 0 ]]; then opts+=(-t); fi && \
 	exec ssh "$${opts[@]}" "$${TARGET_USER}@$${TARGET_HOST}" 'journalctl --user -u hermes-gateway -f'
+
+new-login: check-env ## Save a site login in the VPS Hermes vault (interactive; runs hermes vault add)
+	@[[ -t 0 ]] || { echo "ERROR: make new-login needs a terminal (it asks for a password)"; exit 1; }
+	@set -a && source "$(ROOT)/.env" && set +a && \
+	: "$${TARGET_HOST:?TARGET_HOST missing in .env}" && \
+	: "$${TARGET_USER:?TARGET_USER missing in .env}" && \
+	SSH_PORT="$${SSH_PORT:-22}" && \
+	opts=(-t -o BatchMode=yes -o StrictHostKeyChecking=accept-new -p "$$SSH_PORT") && \
+	if [[ -n "$${SSH_IDENTITY_FILE:-}" ]]; then opts+=(-i "$$SSH_IDENTITY_FILE"); fi && \
+	exec ssh "$${opts[@]}" "$${TARGET_USER}@$${TARGET_HOST}" 'PATH="$$HOME/.local/bin:$$PATH" hermes vault add'
 
 skills-pull: check-env ## Pull custom (non-builtin) skills from VPS into ./skills/
 	@bash "$(SKILLS_PULL)"
