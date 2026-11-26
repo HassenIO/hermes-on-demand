@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import pty
 import re
 import shutil
 import stat
@@ -148,7 +149,9 @@ def test_logs_streams_gateway_journal_over_batch_ssh() -> None:
     assert "make logs" in most_used
 
 
-def run_logs(workdir: Path, env_text: str) -> tuple[subprocess.CompletedProcess[str], Path]:
+def run_logs(
+    workdir: Path, env_text: str, stdin: int = subprocess.DEVNULL
+) -> tuple[subprocess.CompletedProcess[str], Path]:
     shutil.copy(ROOT / "Makefile", workdir / "Makefile")
     (workdir / ".env").write_text(env_text)
     bindir = workdir / "bin"
@@ -164,7 +167,7 @@ def run_logs(workdir: Path, env_text: str) -> tuple[subprocess.CompletedProcess[
     result = subprocess.run(
         ["make", "-s", "-C", str(workdir), "logs"],
         env=env,
-        stdin=subprocess.DEVNULL,
+        stdin=stdin,
         capture_output=True,
         text=True,
     )
@@ -202,6 +205,24 @@ def test_logs_defaults_port_and_skips_identity(tmp_path: Path) -> None:
     args = argv_file.read_text().splitlines()
     assert args[args.index("-p") + 1] == "22"
     assert "-i" not in args
+    assert "-t" not in args
+
+
+def test_logs_allocates_remote_tty_for_terminal_stdin(tmp_path: Path) -> None:
+    primary, secondary = pty.openpty()
+    try:
+        result, argv_file = run_logs(
+            tmp_path,
+            "TARGET_HOST=vps.example.invalid\nTARGET_USER=hermes\n",
+            stdin=secondary,
+        )
+    finally:
+        os.close(secondary)
+        os.close(primary)
+    assert result.returncode == 0, result.stderr
+    args = argv_file.read_text().splitlines()
+    assert "-t" in args
+    assert args.index("-t") < args.index("hermes@vps.example.invalid")
 
 
 def test_logs_requires_target_host(tmp_path: Path) -> None:
